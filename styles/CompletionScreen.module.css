@@ -1,0 +1,81 @@
+.page {
+  min-height: 100vh;
+  background: #f7f7f7;
+  color: #010205;
+  font-family: 'Porsche Next', Arial, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+.page, .page * { box-sizing: border-box; }
+.page h1, .page h2, .page h3, .page p, .page dl, .page dd { margin: 0; }
+.page a { color: inherit; text-decoration: none; touch-action: manipulation; }
+.page a:focus-visible { outline: 2px solid #62666c; outline-offset: 5px; }
+.page svg { width: 24px; height: 24px; flex-shrink: 0; }
+
+.header { display: flex; align-items: center; justify-content: center; min-height: 88px; padding: 20px; background: #fff; }
+.brand { display: inline-flex; align-items: center; justify-content: center; min-height: 44px; }
+.brand img { display: block; width: min(240px, 65vw); height: auto; }
+
+.hero { padding: 64px 24px 108px; background: radial-gradient(ellipse at top, #303438, #101214 70%); color: #fff; text-align: center; }
+.heroContent { width: min(720px, 100%); margin-inline: auto; }
+.successIcon { display: grid; place-items: center; width: 60px; height: 60px; margin: 0 auto 28px; border: 1px solid #ffffff59; border-radius: 50%; background: #ffffff0a; }
+.successIcon svg { width: 28px; height: 28px; }
+.eyebrow { font-size: 12px; line-height: 1.6; letter-spacing: .14em; text-transform: uppercase; }
+.hero .eyebrow { color: #b8bdc1; }
+.hero h1 { margin-top: 12px; font-size: clamp(34px, 4.5vw, 60px); line-height: 1.12; font-weight: 400; letter-spacing: -.025em; text-wrap: balance; }
+.hero .intro { max-width: 540px; margin: 20px auto 0; color: #d5d7da; font-size: 18px; line-height: 1.6; }
+
+.summary { position: relative; width: min(880px, calc(100% - 48px)); margin: -48px auto 0; padding: 36px; border: 1px solid #e2e4e6; border-radius: 16px; background: #fff; box-shadow: 0 12px 32px #01020508; }
+.summaryHeader { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 16px; }
+.summary h2 { font-size: 20px; line-height: 1.4; font-weight: 400; }
+.badge { display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; border-radius: 24px; background: #f0f2f2; color: #3b4246; font-size: 13px; line-height: 1.5; }
+.badge svg { width: 16px; height: 16px; }
+.summary .meetingTitle { margin-top: 20px; font-size: clamp(22px, 2.2vw, 28px); line-height: 1.35; overflow-wrap: anywhere; }
+.summary .details { display: grid; grid-template-columns: 1.2fr .8fr 1fr; gap: 24px; margin-top: 28px; padding-top: 24px; border-top: 1px solid #e5e7e9; }
+.details > div { min-width: 0; }
+.details dt { margin-bottom: 8px; color: #6b7075; font-size: 13px; font-weight: 400; }
+.details dd { font-size: 17px; line-height: 1.5; overflow-wrap: anywhere; }
+.summary .scheduleNote { margin-top: 24px; color: #62666c; font-size: 14px; line-height: 1.6; }
+
+.preparation { width: min(1120px, calc(100% - 48px)); margin-inline: auto; padding: 72px 0 80px; text-align: center; }
+.preparation > .eyebrow { color: #62666c; }
+.preparation h2 { margin-top: 12px; font-size: clamp(28px, 3vw, 40px); line-height: 1.2; font-weight: 400; letter-spacing: -.02em; }
+.steps { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 24px; margin: 36px 0 0; padding: 0; list-style: none; text-align: left; }
+.step { min-width: 0; padding: 28px; border: 1px solid #e2e4e6; border-radius: 12px; background: #fff; overflow-wrap: anywhere; }
+.stepIcon { display: grid; place-items: center; width: 44px; height: 44px; margin-bottom: 24px; border-radius: 10px; background: #f0f2f2; }
+.step h3 { font-size: 22px; line-height: 1.35; font-weight: 400; }
+.step p { margin-top: 12px; color: #62666c; font-size: 16px; line-height: 1.6; }
+.actions { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 16px; margin-top: 36px; }
+.primaryLink, .secondaryLink { display: inline-flex; align-items: center; justify-content: center; gap: 16px; min-height: 52px; padding: 14px 20px; border: 1px solid #010205; border-radius: 8px; font-size: 16px; line-height: 1.5; transition: background .2s; }
+.page .primaryLink { background: #010205; color: #fff; }
+.primaryLink:hover { background: #303438; }
+.secondaryLink:hover { background: #e8eaec; }
+.footer { padding: 32px 24px; background: #101214; color: #fff; text-align: center; }
+.footer p { font-size: 16px; line-height: 1.5; }
+.footer span { display: block; margin-top: 8px; color: #aeb3b8; font-size: 13px; line-height: 1.5; }
+
+@media (max-width: 800px) {
+  .steps { grid-template-columns: minmax(0, 1fr); gap: 16px; }
+  .step { padding: 24px; }
+  .stepIcon { margin-bottom: 16px; }
+}
+
+@media (max-width: 600px) {
+  .header { min-height: 72px; padding: 14px 20px; }
+  .hero { padding: 40px 20px 80px; }
+  .successIcon { width: 52px; height: 52px; margin-bottom: 24px; }
+  .hero .intro { font-size: 16px; }
+  .summary { width: calc(100% - 32px); margin-top: -32px; padding: 24px 20px; border-radius: 12px; }
+  .summaryHeader { gap: 12px; }
+  .summary .details { grid-template-columns: minmax(0, 1fr); gap: 20px; }
+  .details dt { margin-bottom: 4px; }
+  .preparation { width: calc(100% - 32px); padding: 48px 0; }
+  .preparation > .eyebrow { font-size: 11px; }
+  .steps { margin-top: 28px; }
+  .actions { align-items: stretch; flex-direction: column; margin-top: 28px; }
+  .primaryLink, .secondaryLink { width: 100%; padding-inline: 16px; gap: 12px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .primaryLink, .secondaryLink { transition: none; }
+}

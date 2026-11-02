@@ -1,0 +1,159 @@
+.scheduler {
+  width: min(1120px, 100%);
+  margin: 0 auto;
+  padding: 56px 24px;
+  color: #1a1a1a;
+  font-family: Arial, sans-serif;
+  --booking-blue: #0069e8;
+  --booking-blue-hover: #0055bd;
+  --booking-blue-soft: #edf5ff;
+}
+
+.scheduler .heading { margin-bottom: 28px; text-align: center; }
+.scheduler .eyebrow { font-size: 11px; font-weight: 600; letter-spacing: .16em; line-height: 1.6; }
+.scheduler .heading h2 { width: auto; margin: 10px 0 12px; font-size: clamp(30px, 3vw, 42px); line-height: 1.15; letter-spacing: -.035em; }
+.scheduler .heading > p:last-child { color: #62666c; font-size: 16px; }
+.scheduler .card { position: relative; display: grid; grid-template-columns: 300px minmax(0, 1fr); overflow: hidden; border: 1px solid #e1e5e8; border-radius: 10px; background: #fff; box-shadow: 0 4px 24px #1a1a1a0d; }
+.scheduler .calendlyBadge { position: absolute; z-index: 2; top: 22px; right: -43px; display: flex; flex-direction: column; align-items: center; justify-content: center; width: 180px; min-height: 48px; padding: 8px 0; transform: rotate(45deg); background: #505960; color: #fff; text-align: center; text-decoration: none; box-shadow: 0 2px 5px #00000014; }
+.scheduler .calendlyBadge span { font-size: 8px; line-height: 1.3; letter-spacing: .08em; text-transform: uppercase; }
+.scheduler .calendlyBadge strong { font-size: 15px; line-height: 1.3; font-weight: 600; letter-spacing: -.04em; }
+.scheduler .calendlyBadge:hover { background: #39434b; color: #fff; }
+.scheduler .calendlyBadge:focus-visible { outline: 3px solid var(--booking-blue); outline-offset: -3px; }
+.scheduler .overview { display: flex; flex-direction: column; padding: 38px 30px; border-right: 1px solid #e6e8eb; background: #fff; color: #1a1a1a; }
+.scheduler .card svg { width: 20px; height: 20px; flex-shrink: 0; }
+.scheduler .overview h3 { margin: 22px 0 0; font-size: 25px; font-weight: 600; line-height: 1.35; letter-spacing: -.025em; }
+.scheduler .description { color: #555e67; font-size: 14px; line-height: 1.75; }
+.scheduler .interviewer { display: flex; align-items: center; gap: 12px; }
+.scheduler .interviewerAvatar { display: block; flex-shrink: 0; width: 64px; height: 64px; overflow: hidden; border: 1px solid #d8e9ff; border-radius: 50%; background: var(--booking-blue-soft); }
+.scheduler .interviewerAvatar img { display: block; width: 100%; height: 100%; object-fit: cover; }
+.scheduler .interviewer > div > span { display: block; color: #6b747d; font-size: 11px; line-height: 1.5; }
+.scheduler .interviewer strong { display: block; color: #404850; font-size: 15px; font-weight: 600; line-height: 1.5; }
+.scheduler .facts { display: grid; gap: 14px; margin: 24px 0; padding: 0; list-style: none; color: #656d75; font-size: 14px; font-weight: 600; }
+.scheduler .facts li { display: flex; align-items: center; gap: 12px; }
+.scheduler .facts svg { color: #7c858e; }
+.scheduler .sidebarSelection { display: flex; align-items: flex-start; gap: 10px; margin-top: 24px; padding: 16px 0; border-top: 1px solid #e6e8eb; color: var(--booking-blue-hover); }
+.scheduler .sidebarSelection strong { display: block; font-size: 13px; line-height: 1.6; font-weight: 600; }
+.scheduler .sidebarSelection span { display: block; margin-top: 4px; color: #656d75; font-size: 12px; line-height: 1.6; overflow-wrap: anywhere; }
+.scheduler .overviewNote { margin-top: auto; padding-top: 32px; }
+.scheduler .noteLabel { display: block; margin-bottom: 8px; font-size: 13px; line-height: 1.5; }
+.scheduler .overviewNote p { color: #7b838b; font-size: 12px; line-height: 1.65; }
+.scheduler .main { min-width: 0; padding: 38px 32px 0; }
+.scheduler .steps { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 24px; margin: 0 60px 28px 0; padding: 0 0 22px; border-bottom: 1px solid #eceef0; list-style: none; }
+.scheduler .steps li { display: flex; align-items: center; gap: 8px; color: #74787f; font-size: 13px; }
+.scheduler .steps li > span { display: grid; place-items: center; width: 25px; height: 25px; border: 1px solid #d8dbe0; border-radius: 50%; font-size: 12px; }
+.scheduler .steps .activeStep { color: var(--booking-blue); font-weight: 600; }
+.scheduler .steps .activeStep > span { border-color: var(--booking-blue); background: var(--booking-blue); color: #fff; }
+.scheduler .steps svg { width: 15px; height: 15px; }
+.scheduler .sectionHeading h3 { margin: 0 0 8px; font-size: 21px; font-weight: 600; line-height: 1.3; letter-spacing: -.02em; }
+.scheduler .sectionHeading p { color: #686c72; font-size: 14px; line-height: 1.6; }
+.scheduler .timezone { margin: 24px 0 0; color: #63676e; font-size: 12px; line-height: 1.8; overflow-wrap: anywhere; }
+.scheduler .timezone strong { color: #35393f; font-size: 13px; font-weight: 600; }
+.scheduler .picker { display: grid; grid-template-columns: minmax(0, 1.5fr) minmax(120px, .85fr); gap: 24px; min-height: 360px; margin-top: 28px; }
+.scheduler .calendar { min-width: 0; }
+.scheduler h4 { margin: 0; font-size: 14px; line-height: 1.5; font-weight: 600; }
+.scheduler .monthNav { display: flex; justify-content: space-between; align-items: center; min-height: 40px; margin-bottom: 14px; gap: 6px; }
+.scheduler .monthNav > div { display: flex; gap: 2px; }
+.scheduler button { font: inherit; cursor: pointer; transition: background .15s, border-color .15s; }
+.scheduler .monthNav button { display: grid; place-items: center; width: 36px; height: 36px; padding: 0; border: 0; border-radius: 50%; background: var(--booking-blue-soft); color: var(--booking-blue); }
+.scheduler .previous { transform: rotate(180deg); }
+.scheduler .weekdays, .scheduler .days { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 3px; }
+.scheduler .weekdays { margin-bottom: 12px; color: #555e67; font-size: 10px; text-transform: uppercase; text-align: center; }
+.scheduler .days { row-gap: 8px; }
+.scheduler .days button { position: relative; justify-self: center; min-width: 0; width: 100%; max-width: 44px; aspect-ratio: 1; padding: 0; border: 1px solid transparent; border-radius: 50%; background: var(--booking-blue-soft); color: var(--booking-blue); font-size: 14px; font-weight: 600; }
+.scheduler .days button[aria-current="date"]::after { content: ''; position: absolute; bottom: 4px; left: calc(50% - 2px); width: 4px; height: 4px; border-radius: 50%; background: currentColor; }
+.scheduler .calendarHint { margin: 12px 0 0; color: #777b81; font-size: 11px; }
+.scheduler .times { min-width: 0; padding-left: 24px; border-left: 1px solid #eceef0; }
+.scheduler .times h4 { display: flex; align-items: center; min-height: 40px; margin-bottom: 14px; }
+.scheduler .timeGrid { display: grid; grid-template-columns: minmax(0, 1fr); gap: 10px; max-height: 310px; overflow-y: auto; padding: 3px; margin: -3px; scrollbar-width: thin; scrollbar-color: #c6c9ce transparent; }
+.scheduler .timeGrid button { min-height: 48px; padding: 10px 8px; border: 1px solid #0069e866; border-radius: 5px; background: #fff; color: var(--booking-blue); font-size: 14px; font-weight: 600; font-variant-numeric: tabular-nums; }
+.scheduler .days button:not(:disabled):hover, .scheduler .timeGrid button:hover, .scheduler .monthNav button:not(:disabled):hover { background: #dcecff; }
+.scheduler .timeGrid button:hover { border-color: var(--booking-blue); box-shadow: inset 0 0 0 1px var(--booking-blue); }
+.scheduler .days button[aria-pressed="true"], .scheduler .timeGrid button[aria-pressed="true"] { background: var(--booking-blue); border-color: var(--booking-blue); color: #fff; }
+.scheduler .days button[aria-pressed="true"]:hover, .scheduler .timeGrid button[aria-pressed="true"]:hover { background: var(--booking-blue-hover); }
+.scheduler .days button:disabled { background: transparent; color: #b6bac0; cursor: default; }
+.scheduler .monthNav button:disabled { opacity: .25; cursor: default; }
+.scheduler .emptyState { padding: 16px 0; font-size: 13px; line-height: 1.6; color: #686c72; }
+.scheduler .footer { display: flex; justify-content: space-between; align-items: center; gap: 16px; margin-top: 20px; padding: 22px 0; border-top: 1px solid #eceef0; }
+.scheduler .selection { display: flex; align-items: center; gap: 10px; min-width: 0; }
+.scheduler .selection svg { color: #73777e; }
+.scheduler .selection span { display: block; font-size: 12px; line-height: 1.5; color: #73777e; }
+.scheduler .selection strong { display: block; margin-top: 3px; font-size: 13px; line-height: 1.5; font-weight: 500; }
+.scheduler .primary { display: inline-flex; justify-content: center; align-items: center; gap: 12px; min-height: 48px; padding: 12px 24px; border: 1px solid var(--booking-blue); border-radius: 24px; background: var(--booking-blue); color: #fff; font-size: 14px; font-weight: 600; white-space: nowrap; }
+.scheduler .primary:hover:not(:disabled) { background: var(--booking-blue-hover); border-color: var(--booking-blue-hover); }
+.scheduler .primary:disabled { background: #e8eaed; border-color: #e8eaed; color: #8a8e95; cursor: not-allowed; }
+.scheduler button:focus-visible, .scheduler input:focus-visible { outline: 2px solid var(--booking-blue); outline-offset: 2px; }
+.scheduler .details { padding-bottom: 24px; }
+.scheduler .review { display: flex; align-items: flex-start; gap: 12px; padding: 18px; margin: 24px 0; border: 1px solid #e2e5e8; border-radius: 10px; background: #f7f8f9; }
+.scheduler .review > svg { margin-top: 2px; }
+.scheduler .review > div { flex: 1; min-width: 0; }
+.scheduler .review strong { font-size: 14px; font-weight: 600; line-height: 1.5; }
+.scheduler .review p { margin-top: 4px; color: #686c72; font-size: 13px; line-height: 1.5; overflow-wrap: anywhere; }
+.scheduler .textButton { min-height: 44px; padding: 6px 0; border: 0; background: transparent; color: var(--booking-blue); font-size: 13px; text-decoration: underline; text-underline-offset: 3px; }
+.scheduler .textButton:disabled { opacity: .5; cursor: not-allowed; }
+.scheduler .review .textButton { margin-top: -10px; }
+.scheduler .label { display: block; margin-bottom: 8px; color: #292d32; font-size: 14px; font-weight: 600; }
+.scheduler .label span { color: #777b81; font-weight: 400; }
+.scheduler .phoneInput { display: block; width: 100%; min-height: 50px; padding: 12px 14px; border: 1px solid #cbd0d6; border-radius: 8px; background: #fff; color: #181a1d; font-size: 16px; }
+.scheduler .phoneInput[aria-invalid="true"] { border-color: #b12b36; }
+.scheduler .hint { margin-top: 8px; color: #73777e; font-size: 12px; line-height: 1.6; }
+.scheduler .error { margin-top: 10px; color: #aa2631; font-size: 13px; line-height: 1.5; }
+.scheduler .confirmation { margin: 26px 0 12px; }
+.scheduler .confirmation .primary { width: 100%; }
+.scheduler .confirmation .hint { text-align: center; }
+.scheduler .providerIcon { width: 20px; height: 20px; object-fit: contain; }
+
+@media (max-width: 1000px) {
+  .scheduler .card { grid-template-columns: 230px minmax(0, 1fr); }
+  .scheduler .overview { padding: 26px 24px; }
+  .scheduler .overview h3 { font-size: 24px; }
+  .scheduler .main { padding: 38px 24px 0; }
+  .scheduler .picker { gap: 16px; }
+  .scheduler .times { padding-left: 16px; }
+}
+
+@media (max-width: 800px) {
+  .scheduler { max-width: 680px; padding: 36px 20px; }
+  .scheduler .card { grid-template-columns: minmax(0, 1fr); }
+  .scheduler .overview { display: block; padding: 28px 24px; border-right: 0; border-bottom: 1px solid #e6e8eb; }
+  .scheduler .overviewNote, .scheduler .description { display: none; }
+  .scheduler .overview h3 { margin: 20px 0; font-size: 24px; }
+  .scheduler .interviewer { margin: 0; padding-right: 64px; }
+  .scheduler .steps { margin-right: 0; }
+  .scheduler .facts { display: flex; flex-wrap: wrap; gap: 12px 24px; margin: 0; }
+  .scheduler .facts li { gap: 8px; font-size: 13px; }
+  .scheduler .picker { grid-template-columns: minmax(0, 1fr); gap: 24px; }
+  .scheduler .times { padding: 20px 0 0; border-left: 0; border-top: 1px solid #eceef0; }
+  .scheduler .timeGrid { grid-template-columns: repeat(3, minmax(0, 1fr)); max-height: none; }
+  .scheduler .monthNav button { width: 44px; height: 44px; }
+  .scheduler .days button { min-height: 44px; aspect-ratio: auto; }
+}
+
+@media (max-width: 520px) {
+  .scheduler { padding: 32px 16px; }
+  .scheduler .heading { text-align: left; }
+  .scheduler .heading h2 { text-align: left; font-size: 32px; }
+  .scheduler .card { border-radius: 10px; }
+  .scheduler .overview { padding: 28px 22px 22px; }
+  .scheduler .interviewer { align-items: flex-start; flex-direction: column; gap: 10px; }
+  .scheduler .main { padding: 24px 12px 0; }
+  .scheduler .steps { gap: 20px; }
+  .scheduler .picker { grid-template-columns: minmax(0, 1fr); gap: 20px; }
+  .scheduler .times { padding: 16px 0 0; border-left: 0; border-top: 1px solid #eceef0; }
+  .scheduler .times h4 { min-height: auto; }
+  .scheduler .timeGrid { grid-template-columns: repeat(3, minmax(0, 1fr)); max-height: none; }
+  .scheduler .footer { flex-direction: column; align-items: stretch; gap: 18px; }
+  .scheduler .review { flex-wrap: wrap; padding: 14px; }
+  .scheduler .review .textButton { margin: 0 0 -6px 32px; }
+  .scheduler .confirmation .primary { white-space: normal; }
+  .scheduler .primary { white-space: normal; text-align: center; }
+  .scheduler .overview, .scheduler .selection > div, .scheduler .interviewer > div { min-width: 0; overflow-wrap: anywhere; }
+}
+
+@media (max-width: 360px) {
+  .scheduler .timeGrid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .scheduler .heading h2 { font-size: 28px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .scheduler button { transition: none; }
+}

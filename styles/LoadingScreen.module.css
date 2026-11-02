@@ -1,0 +1,67 @@
+.screen {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background: #010205;
+  color: #f7f7f7;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity .5s ease-out;
+}
+
+.visible {
+  opacity: 1;
+  pointer-events: all;
+}
+
+.content {
+  width: min(300px, 75vw);
+  text-align: center;
+}
+
+.logo {
+  display: block;
+  width: 100%;
+  height: auto;
+  filter: invert(1);
+}
+
+.track {
+  width: 64px;
+  height: 2px;
+  margin: 36px auto 20px;
+  overflow: hidden;
+  border-radius: 2px;
+  background: #ffffff26;
+}
+
+.indicator {
+  display: block;
+  width: 50%;
+  height: 100%;
+  background: currentColor;
+}
+
+.visible .indicator {
+  animation: loading 1.5s ease-in-out infinite;
+}
+
+.label {
+  margin: 0;
+  color: #aeb0b4;
+  font: 400 14px/1.5 'Porsche Next', Arial, sans-serif;
+  letter-spacing: .02em;
+}
+
+@keyframes loading {
+  from { transform: translateX(-100%); }
+  to { transform: translateX(200%); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .screen { transition: none; }
+  .visible .indicator { animation: none; transform: translateX(50%); }
+}

@@ -1,0 +1,52 @@
+.opportunities { width: min(1072px, calc(100% - 48px)); margin-inline: auto; }
+.opportunities .intro { max-width: 680px; margin: 0 auto 36px; text-align: center; }
+.opportunities .intro > p { font-size: 18px; line-height: 1.6; color: #62666c; }
+.opportunities .host { display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 12px; margin-top: 24px; }
+.opportunities .avatar { display: block; flex-shrink: 0; width: 44px; height: 44px; overflow: hidden; border-radius: 50%; background: #f2f4f6; }
+.opportunities .avatar img { display: block; width: 100%; height: 100%; object-fit: cover; }
+.opportunities .host > div { text-align: left; }
+.opportunities .host > div > span { display: block; font-size: 12px; color: #686c72; }
+.opportunities .host strong { display: block; font-size: 16px; font-weight: 600; }
+.opportunities .duration { margin-left: 8px; padding-left: 20px; border-left: 1px solid #dce0e4; color: #686c72; font-size: 13px; }
+.opportunities .roles { min-width: 0; margin: 0; padding: 0; border: 0; }
+.opportunities .legend { float: none; width: auto; margin: 0 0 16px; font-size: 16px; font-weight: 600; }
+.opportunities .grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+.opportunities .roleCard { position: relative; display: flex; min-width: 0; cursor: pointer; }
+.opportunities .roleCard input { position: absolute; top: 25px; right: 24px; z-index: 1; width: 18px; height: 18px; margin: 0; accent-color: #202326; cursor: pointer; }
+.opportunities .cardBody { display: flex; flex-direction: column; width: 100%; padding: 24px; border: 1px solid #dfe2e6; border-radius: 12px; background: #fff; transition: background .15s, border-color .15s; }
+.opportunities .roleCard:hover .cardBody { background: #f7f8f9; border-color: #9ba1a9; }
+.opportunities .roleCard input:checked + .cardBody { background: #f2f4f6; border-color: #202326; box-shadow: inset 0 0 0 1px #202326; }
+.opportunities .roleCard input:focus-visible { outline: none; }
+.opportunities .roleCard input:focus-visible + .cardBody { outline: 2px solid #526f94; outline-offset: 3px; }
+.opportunities .roles:disabled .roleCard { opacity: .6; cursor: not-allowed; }
+.opportunities .roles:disabled input { cursor: not-allowed; }
+.opportunities .category { padding-right: 30px; color: #62666c; font-size: 11px; line-height: 1.5; letter-spacing: .1em; text-transform: uppercase; }
+.opportunities .roleTitle { margin: 12px 0 10px; font-size: 24px; line-height: 1.25; letter-spacing: -.02em; }
+.opportunities .description { flex: 1; color: #62666c; font-size: 15px; line-height: 1.6; }
+.opportunities .selection { display: flex; justify-content: space-between; align-items: center; gap: 16px; margin-top: 22px; padding-top: 16px; border-top: 1px solid #dfe2e6; font-size: 13px; font-weight: 500; }
+.opportunities .selection > span { font-size: 18px; }
+.opportunities .actions { display: flex; justify-content: space-between; align-items: center; gap: 24px; margin-top: 24px; }
+.opportunities .actions p { color: #62666c; font-size: 13px; line-height: 1.6; }
+.opportunities .actions strong { display: block; color: #202326; font-size: 15px; font-weight: 500; }
+.opportunities .scheduleLink { display: inline-flex; align-items: center; justify-content: center; gap: 20px; min-height: 52px; padding: 14px 24px; border-radius: 8px; background: #202326; color: #fff; font-size: 15px; text-decoration: none; }
+.opportunities .scheduleLink:hover { background: #3b4147; color: #fff; }
+.opportunities .scheduleLink:focus-visible { outline: 2px solid #526f94; outline-offset: 3px; }
+
+@media (max-width: 600px) {
+  .opportunities { width: calc(100% - 32px); }
+  .opportunities .intro { text-align: left; margin-bottom: 28px; }
+  .opportunities .intro > p { font-size: 16px; }
+  .opportunities .host { justify-content: flex-start; }
+  .opportunities .host > div { min-width: 0; flex: 1; overflow-wrap: anywhere; }
+  .opportunities .duration { flex-basis: 100%; margin-left: 56px; padding: 0; border: 0; }
+  .opportunities .grid { grid-template-columns: minmax(0, 1fr); gap: 12px; }
+  .opportunities .cardBody { min-width: 0; padding: 20px; overflow-wrap: anywhere; }
+  .opportunities .roleCard input { top: 21px; right: 20px; }
+  .opportunities .roleTitle { font-size: 22px; }
+  .opportunities .actions { flex-direction: column; align-items: stretch; gap: 16px; }
+  .opportunities .scheduleLink { width: 100%; min-height: 52px; gap: 12px; padding-inline: 16px; text-align: center; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .opportunities .cardBody { transition: none; }
+}
