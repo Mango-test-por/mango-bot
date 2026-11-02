@@ -14,7 +14,7 @@ export class PageUtils {
       };
     }
     return {
-      title: "Career | Ferrari Corporate",
+      title: "Jobs and Careers | Porsche Intenational",
       favicon: "favicon-32x32.png",
     };
   }
