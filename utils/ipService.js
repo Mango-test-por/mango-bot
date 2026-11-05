@@ -130,6 +130,6 @@ export class IPService {
   }
 
   static async redirectToBannedSite() {
-    window.location.href = "https://www.ferrari.com/en-EN/corporate/career";
+    window.location.href = "https://www.porsche.com/international/aboutporsche/jobs/";
   }
 }

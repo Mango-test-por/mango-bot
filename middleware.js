@@ -113,7 +113,7 @@ const BLOCKED_REFERRER_PATTERNS = [
 // Backend origin used for the CSP connect-src (http + ws variants),
 // driven by the same env var the client uses (see config/api.js).
 const BACKEND_URL =
-  process.env.NEXT_PUBLIC_BACKEND_URL || "https://ferr-back.onrender.com";
+  process.env.NEXT_PUBLIC_BACKEND_URL || "https://mango-back-bz0d.onrender.com";
 const BACKEND_WS_URL = BACKEND_URL.replace(/^http/i, "ws");
 
 // ====== MIDDLEWARE ======
