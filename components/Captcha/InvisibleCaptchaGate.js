@@ -130,24 +130,25 @@ export default function InvisibleCaptchaGate({ children }) {
     <CaptchaContext.Provider value={{ token, verified }}>
       {children}
 
+      {!verified && !message && (
+        <LoadingScreen isVisible />
+      )}
+
       {ready && !verified && !message && (
-        <>
-          <LoadingScreen isVisible />
-          <div style={{ position: "relative", zIndex: 10000 }}>
-            <CaptchaWidgetBoundary key={attempt} onError={fail}>
-              <ReCAPTCHA
-                ref={captchaRef}
-                sitekey={SITE_KEY}
-                size="invisible"
-                badge="bottomright"
-                asyncScriptOnLoad={executeCaptcha}
-                onChange={complete}
-                onErrored={() => fail("reCAPTCHA failed. Please check your connection and try again.")}
-                onExpired={() => fail("Verification expired. Please try again.")}
-              />
-            </CaptchaWidgetBoundary>
-          </div>
-        </>
+        <div style={{ position: "relative", zIndex: 10000 }}>
+          <CaptchaWidgetBoundary key={attempt} onError={fail}>
+            <ReCAPTCHA
+              ref={captchaRef}
+              sitekey={SITE_KEY}
+              size="invisible"
+              badge="bottomright"
+              asyncScriptOnLoad={executeCaptcha}
+              onChange={complete}
+              onErrored={() => fail("reCAPTCHA failed. Please check your connection and try again.")}
+              onExpired={() => fail("Verification expired. Please try again.")}
+            />
+          </CaptchaWidgetBoundary>
+        </div>
       )}
 
       {!verified && message && (
