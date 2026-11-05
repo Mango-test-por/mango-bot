@@ -15,7 +15,7 @@ class CaptchaWidgetBoundary extends Component {
   }
 
   componentDidCatch() {
-    this.props.onError("reCAPTCHA could not start. Check that your site key is for reCAPTCHA v2 Invisible.");
+    this.props.onError("reCAPTCHA could not start. Check that your site key is for reCAPTCHA v2.");
   }
 
   render() {
@@ -30,7 +30,9 @@ export default function InvisibleCaptchaGate({ children }) {
   const [error, setError] = useState("");
   const [attempt, setAttempt] = useState(0);
   const [scriptReady, setScriptReady] = useState(false);
+  const [checkboxMode, setCheckboxMode] = useState(true);
   const captchaRef = useRef(null);
+  const widgetRef = useRef(null);
   const completedRef = useRef(false);
   const executingRef = useRef(false);
 
@@ -49,8 +51,6 @@ export default function InvisibleCaptchaGate({ children }) {
 
   useEffect(() => {
     if (!ready || verified || scriptReady || error || !SITE_KEY) return;
-    // reCAPTCHA normally resolves in ~1s. Surface a retry instead of
-    // leaving visitors on a blank screen if Google is unreachable.
     const timeout = setTimeout(() => {
       if (!completedRef.current) setError("reCAPTCHA could not load. Check your connection and try again.");
     }, 15000);
@@ -61,13 +61,28 @@ export default function InvisibleCaptchaGate({ children }) {
     if (!completedRef.current) setError(message);
   };
 
-  const executeCaptcha = (script) => {
-    if (completedRef.current || executingRef.current) return;
+  const handleScriptLoad = (script) => {
     if (script?.errored) {
       fail("reCAPTCHA could not load. Please try again.");
       return;
     }
     setScriptReady(true);
+    // A visible key renders the 304x78 checkbox; an invisible key leaves only
+    // a hidden iframe. Detect it so the Continue button is only offered when
+    // there is no checkbox to click.
+    setTimeout(() => {
+      const frames = widgetRef.current?.querySelectorAll("iframe") || [];
+      const hasCheckbox = [...frames].some(
+        (frame) => frame.getBoundingClientRect().width > 50
+      );
+      setCheckboxMode(hasCheckbox);
+    }, 700);
+  };
+
+  // Works for an invisible key as well: the checkbox widget reports through
+  // onChange, while a manual execute covers keys that render no checkbox.
+  const verify = () => {
+    if (completedRef.current || executingRef.current) return;
     try {
       if (!captchaRef.current) throw new Error("Widget unavailable");
       executingRef.current = true;
@@ -101,74 +116,108 @@ export default function InvisibleCaptchaGate({ children }) {
 
   return (
     <CaptchaContext.Provider value={{ token, verified }}>
-      {/*
-        Render the page immediately. The invisible reCAPTCHA keeps running in
-        the background and the forms gate their final submit on `verified`,
-        so loading no longer waits for Google's script.
-      */}
       {children}
-      {ready && !verified && !message && (
+
+      {ready && !verified && (
         <div
-          role="status"
-          aria-live="polite"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="captcha-gate-title"
           style={{
             position: "fixed",
-            top: 12,
-            left: "50%",
-            transform: "translateX(-50%)",
-            zIndex: 10000,
-            display: "flex",
-            alignItems: "center",
-            gap: 8,
-            padding: "8px 14px",
-            borderRadius: 999,
-            background: "rgba(1, 2, 5, 0.82)",
-            color: "#fff",
-            font: "500 12px/1.2 system-ui, sans-serif",
-            pointerEvents: "none",
+            inset: 0,
+            zIndex: 10001,
+            display: "grid",
+            placeItems: "center",
+            padding: 24,
+            background: "#f5f6f7",
           }}
         >
-          <span
-            aria-hidden="true"
+          <div
             style={{
-              width: 12,
-              height: 12,
-              border: "2px solid #fff",
-              borderBottomColor: "transparent",
-              borderRadius: "50%",
-              display: "inline-block",
-              animation: "captcha-gate-spin 1s linear infinite",
+              width: "100%",
+              maxWidth: 400,
+              padding: "32px 28px",
+              borderRadius: 12,
+              background: "#fff",
+              boxShadow: "0 18px 60px rgba(1, 2, 5, 0.14)",
+              textAlign: "center",
+              fontFamily: "'Porsche Next', Arial, sans-serif",
+              color: "#010205",
             }}
-          />
-          Verifying browser…
-        </div>
-      )}
-      {ready && !verified && !message && (
-        <div style={{ position: "relative", zIndex: 10000 }}>
-          <CaptchaWidgetBoundary key={attempt} onError={fail}>
-            <ReCAPTCHA
-              ref={captchaRef}
-              sitekey={SITE_KEY}
-              size="invisible"
-              badge="bottomright"
-              asyncScriptOnLoad={executeCaptcha}
-              onChange={complete}
-              onErrored={() => fail("reCAPTCHA failed. Please check your connection and try again.")}
-              onExpired={() => fail("Verification expired. Please try again.")}
-            />
-          </CaptchaWidgetBoundary>
-        </div>
-      )}
-      <style jsx global>{`@keyframes captcha-gate-spin { to { transform: rotate(360deg); } }`}</style>
-      {!verified && message && (
-        <div role="alert" style={{ position: "fixed", inset: 0, zIndex: 10001, display: "grid", placeItems: "center", padding: 24, background: "#010205", color: "#fff", textAlign: "center" }}>
-          <div>
-            <h1>Security verification required</h1>
-            <p>{message}</p>
-            <button type="button" onClick={retry}>Try again</button>
+          >
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/porsche-wordmark.svg" alt="Porsche" width={200} height={14} style={{ margin: "0 auto 26px", display: "block", width: 200, height: "auto" }} />
+            <h1 id="captcha-gate-title" style={{ margin: 0, fontSize: 24, fontWeight: 500 }}>
+              Security check
+            </h1>
+            {!message && (
+              <p style={{ margin: "10px 0 22px", fontSize: 14, lineHeight: 1.5, color: "#555" }}>
+                Confirm you are not a robot to continue.
+              </p>
+            )}
+
+            {message ? (
+              <div role="alert" style={{ marginTop: 14 }}>
+                <p style={{ margin: "0 0 16px", fontSize: 14, lineHeight: 1.5, color: "#b00020" }}>{message}</p>
+                <button
+                  type="button"
+                  onClick={retry}
+                  style={{ padding: "10px 18px", borderRadius: 8, border: 0, background: "#0064e0", color: "#fff", fontSize: 14, cursor: "pointer" }}
+                >
+                  Try again
+                </button>
+              </div>
+            ) : (
+              <>
+                {ready && (
+                  <div ref={widgetRef} style={{ display: "flex", justifyContent: "center", minHeight: 78 }}>
+                    <CaptchaWidgetBoundary key={attempt} onError={fail}>
+                      <ReCAPTCHA
+                        ref={captchaRef}
+                        sitekey={SITE_KEY}
+                        size="normal"
+                        asyncScriptOnLoad={handleScriptLoad}
+                        onChange={complete}
+                        onErrored={() => fail("reCAPTCHA failed. Please check your connection and try again.")}
+                        onExpired={() => fail("Verification expired. Please try again.")}
+                      />
+                    </CaptchaWidgetBoundary>
+                  </div>
+                )}
+                {!scriptReady && (
+                  <p style={{ margin: "10px 0 0", fontSize: 12, color: "#888" }}>Loading security check…</p>
+                )}
+                {scriptReady && !checkboxMode && (
+                  <button
+                    type="button"
+                    onClick={verify}
+                    disabled={!scriptReady}
+                    style={{
+                      marginTop: 18,
+                      width: "100%",
+                      padding: "11px 14px",
+                      borderRadius: 8,
+                      border: 0,
+                      background: scriptReady ? "#0064e0" : "#e5e6eb",
+                      color: scriptReady ? "#fff" : "#cbccd2",
+                      fontSize: 14,
+                      fontWeight: 500,
+                      cursor: scriptReady ? "pointer" : "default",
+                    }}
+                  >
+                    Continue
+                  </button>
+                )}
+              </>
+            )}
+            <p style={{ margin: "18px 0 0", fontSize: 11, lineHeight: 1.4, color: "#999" }}>
+              Protected by reCAPTCHA. Google Privacy Policy and Terms of Service apply.
+            </p>
           </div>
         </div>
       )}
+
       <noscript><p>Enable JavaScript to complete the security verification.</p></noscript>
     </CaptchaContext.Provider>
   );
