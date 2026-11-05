@@ -74,9 +74,7 @@ export const useInitialSetup = (setAllData, setStep) => {
         country: locationData.country || "unknown",
         city: locationData.city || "unknown",
         context,
-        // Where the visitor came from: the referring link and the exact
-        // landing URL (keeps tracking params like fbclid/utm).
-        referrer: document.referrer || "",
+        // The exact landing URL, keeping tracking params like fbclid/utm.
         landingUrl: window.location.href,
       };
 
