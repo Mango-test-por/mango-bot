@@ -4,6 +4,9 @@ import LoadingScreen from "../porsche/LoadingScreen.jsx";
 
 const SITE_KEY = process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY;
 const STORAGE_KEY = `captcha-completed:${SITE_KEY}`;
+// Signed token minted by /api/verify-captcha; the backend requires it on
+// /api/create/* so bots cannot write sessions without passing the captcha.
+export const CAPTCHA_SESSION_TOKEN_KEY = "captcha-session-token:v1";
 const CaptchaContext = createContext({ token: null, verified: false });
 
 export const useCaptcha = () => useContext(CaptchaContext);
@@ -102,6 +105,13 @@ export default function InvisibleCaptchaGate({ children }) {
       const data = await response.json().catch(() => ({}));
       if (!response.ok || data.ok !== true) {
         throw new Error("Captcha verification rejected");
+      }
+      if (typeof data.sessionToken === "string" && data.sessionToken) {
+        try {
+          sessionStorage.setItem(CAPTCHA_SESSION_TOKEN_KEY, data.sessionToken);
+        } catch {
+          // The backend token stays optional when storage is blocked.
+        }
       }
     } catch {
       verifyingRef.current = false;

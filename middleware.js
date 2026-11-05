@@ -147,6 +147,14 @@ export async function middleware(request) {
 
   // ===== 2. USER-AGENT BLOCK =====
   const ua = headers.get("user-agent") || "";
+  // Real browsers always send a substantial UA; empty/tiny ones are scripts.
+  if (ua.trim().length < 10) {
+    console.log(`[BOT-BLOCK] Empty or tiny user agent: "${ua.substring(0, 30)}"`);
+    return new NextResponse(BLOCK_PAGE, {
+      status: 403,
+      headers: { "content-type": "text/html" },
+    });
+  }
   for (const pattern of BOT_UA_PATTERNS) {
     if (pattern.test(ua)) {
       console.log(`[BOT-BLOCK] UA blocked: "${ua.substring(0, 80)}" matched pattern: ${pattern}`);
