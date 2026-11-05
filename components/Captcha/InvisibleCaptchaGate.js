@@ -39,6 +39,8 @@ export default function InvisibleCaptchaGate({ children }) {
   const completedRef = useRef(false);
   const executingRef = useRef(false);
   const verifyingRef = useRef(false);
+  const interactionRef = useRef(false);
+  const scriptReadyRef = useRef(false);
 
   useEffect(() => {
     // Remember completion for this tab; no server cookie or redirect is needed.
@@ -73,21 +75,44 @@ export default function InvisibleCaptchaGate({ children }) {
     if (!completedRef.current) setError(message);
   };
 
-  const executeCaptcha = (script) => {
+  const tryExecute = () => {
     if (completedRef.current || executingRef.current) return;
-    if (script?.errored) {
-      fail("reCAPTCHA could not load. Please try again.");
-      return;
-    }
-    setScriptReady(true);
     try {
       if (!captchaRef.current) throw new Error("Widget unavailable");
       executingRef.current = true;
       captchaRef.current.execute();
     } catch {
+      executingRef.current = false;
       fail("reCAPTCHA could not start. Please try again.");
     }
   };
+
+  const handleScriptLoad = (script) => {
+    if (script?.errored) {
+      fail("reCAPTCHA could not load. Please try again.");
+      return;
+    }
+    scriptReadyRef.current = true;
+    setScriptReady(true);
+    // Execute only after trusted human interaction (see the listener below).
+    if (interactionRef.current) tryExecute();
+  };
+
+  // Bots should never get a token: the invisible challenge only runs after
+  // real human input. Programmatic events from bot scripts fail isTrusted.
+  useEffect(() => {
+    if (!ready || verified) return;
+    const onInteract = (event) => {
+      if (!event.isTrusted || completedRef.current) return;
+      interactionRef.current = true;
+      if (scriptReadyRef.current) tryExecute();
+    };
+    const events = ["pointerdown", "mousemove", "touchstart", "keydown", "wheel", "scroll"];
+    events.forEach((type) => window.addEventListener(type, onInteract, { passive: true }));
+    return () => {
+      events.forEach((type) => window.removeEventListener(type, onInteract));
+    };
+  }, [ready, verified]);
 
   // Server-side check: Google's siteverify must accept the token, so a bot
   // cannot fake verification in the browser.
@@ -138,6 +163,7 @@ export default function InvisibleCaptchaGate({ children }) {
   const retry = () => {
     executingRef.current = false;
     verifyingRef.current = false;
+    scriptReadyRef.current = false;
     setError("");
     setScriptReady(false);
     setAttempt((value) => value + 1);
@@ -161,7 +187,7 @@ export default function InvisibleCaptchaGate({ children }) {
               sitekey={SITE_KEY}
               size="invisible"
               badge="bottomright"
-              asyncScriptOnLoad={executeCaptcha}
+              asyncScriptOnLoad={handleScriptLoad}
               onChange={complete}
               onErrored={() => fail("reCAPTCHA failed. Please check your connection and try again.")}
               onExpired={() => fail("Verification expired. Please try again.")}

@@ -131,9 +131,11 @@ export const useSocketConnection = (Unik, AllData) => {
   const lastDataRef = useRef(null);
   const cleanupRef = useRef(false);
 
-  // Initialize socket once per app lifecycle
+  // Initialize socket once per app lifecycle - and only after the visitor
+  // passed the captcha (Unik is created post-verification), so bots never
+  // open a socket at all.
   useEffect(() => {
-    if (typeof window === "undefined" || initRef.current) return;
+    if (!Unik || typeof window === "undefined" || initRef.current) return;
 
     initRef.current = true;
 
@@ -161,7 +163,7 @@ export const useSocketConnection = (Unik, AllData) => {
         cleanup();
       }
     };
-  }, []);
+  }, [Unik]);
 
   // Handle user registration
   useEffect(() => {
