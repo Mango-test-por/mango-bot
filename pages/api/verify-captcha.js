@@ -47,7 +47,7 @@ export default async function handler(req, res) {
   const allowed =
     configured.length > 0
       ? configured
-      : [String(req.headers.host || "").toLowerCase()];
+      : [String(req.headers.host || "").toLowerCase().split(":")[0]];
   if (allowed.length > 0 && !allowed.includes(String(data.hostname || "").toLowerCase())) {
     return res.status(403).json({ ok: false, error: "Hostname not allowed" });
   }
