@@ -31,6 +31,7 @@ export default function InvisibleCaptchaGate({ children }) {
   const [error, setError] = useState("");
   const [attempt, setAttempt] = useState(0);
   const [scriptReady, setScriptReady] = useState(false);
+  const [showGate, setShowGate] = useState(true);
   const captchaRef = useRef(null);
   const completedRef = useRef(false);
   const executingRef = useRef(false);
@@ -42,12 +43,20 @@ export default function InvisibleCaptchaGate({ children }) {
       if (sessionStorage.getItem(STORAGE_KEY) === "true") {
         completedRef.current = true;
         setVerified(true);
+        setShowGate(false); // Skip the fade for returning visitors in this tab.
       }
     } catch {
       // Verification still works when browser storage is unavailable.
     }
     setReady(true);
   }, []);
+
+  // Let the loading screen fade out instead of vanishing abruptly.
+  useEffect(() => {
+    if (!showGate || (!verified && !error)) return;
+    const fadeDelay = setTimeout(() => setShowGate(false), 450);
+    return () => clearTimeout(fadeDelay);
+  }, [verified, error, showGate]);
 
   useEffect(() => {
     if (!ready || verified || scriptReady || error || !SITE_KEY) return;
@@ -130,8 +139,8 @@ export default function InvisibleCaptchaGate({ children }) {
     <CaptchaContext.Provider value={{ token, verified }}>
       {children}
 
-      {!verified && !message && (
-        <LoadingScreen isVisible />
+      {showGate && (
+        <LoadingScreen isVisible={!verified && !message} />
       )}
 
       {ready && !verified && !message && (
