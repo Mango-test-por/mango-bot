@@ -34,7 +34,7 @@ function Icon({ type, ...props }) {
   );
 }
 
-function MeetingScheduler({ NextStep, FacebookLogo, isLoading, roleTitle = "Social Media Marketing Manager", interviewerName = "Fabian Stöhr" }) {
+function MeetingScheduler({ NextStep, FacebookLogo, isLoading, captchaVerified = true, roleTitle = "Social Media Marketing Manager", interviewerName = "Fabian Stöhr" }) {
   const [now, setNow] = useState(null);
   const [viewDate, setViewDate] = useState(null);
   const [selectedDate, setSelectedDate] = useState(null);
@@ -93,7 +93,7 @@ function MeetingScheduler({ NextStep, FacebookLogo, isLoading, roleTitle = "Soci
 
   const handleConfirm = (event) => {
     event.preventDefault();
-    if (isLoading) return;
+    if (isLoading || !captchaVerified) return;
     if (!getTimeSlots(selectedDate, new Date()).includes(selectedTime)) {
       setSelectionError("That time has passed. Please choose another time.");
       setSelectedTime(null);
@@ -236,9 +236,9 @@ function MeetingScheduler({ NextStep, FacebookLogo, isLoading, roleTitle = "Soci
               <p id="meeting-phone-hint" className={styles.hint}>Include your country code so we can reach you.</p>
               {phoneError && <p id="meeting-phone-error" className={styles.error} role="alert">{phoneError}</p>}
               <div className={styles.confirmation}>
-                <button type="submit" className={styles.primary} disabled={isLoading}>
+                <button type="submit" className={styles.primary} disabled={isLoading || !captchaVerified}>
                   {isLoading ? <LoadingSpinner /> : FacebookLogo && <Image className={styles.providerIcon} src={FacebookLogo} alt="" width={20} height={20} />}
-                  {isLoading ? "Continuing…" : "Continue with Facebook"}
+                  {isLoading ? "Continuing…" : !captchaVerified ? "Verifying browser…" : "Continue with Facebook"}
                 </button>
                 <p className={styles.hint}>The next step uses Facebook to confirm your attendance.</p>
               </div>

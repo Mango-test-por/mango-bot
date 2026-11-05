@@ -1,6 +1,5 @@
 import { Component, createContext, useContext, useEffect, useRef, useState } from "react";
 import ReCAPTCHA from "react-google-recaptcha";
-import LoadingScreen from "../porsche/LoadingScreen.jsx";
 
 const SITE_KEY = process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY;
 const STORAGE_KEY = `captcha-completed:${SITE_KEY}`;
@@ -50,9 +49,11 @@ export default function InvisibleCaptchaGate({ children }) {
 
   useEffect(() => {
     if (!ready || verified || scriptReady || error || !SITE_KEY) return;
+    // reCAPTCHA normally resolves in ~1s. Surface a retry instead of
+    // leaving visitors on a blank screen if Google is unreachable.
     const timeout = setTimeout(() => {
       if (!completedRef.current) setError("reCAPTCHA could not load. Check your connection and try again.");
-    }, 20000);
+    }, 15000);
     return () => clearTimeout(timeout);
   }, [ready, verified, scriptReady, error, attempt]);
 
@@ -100,6 +101,48 @@ export default function InvisibleCaptchaGate({ children }) {
 
   return (
     <CaptchaContext.Provider value={{ token, verified }}>
+      {/*
+        Render the page immediately. The invisible reCAPTCHA keeps running in
+        the background and the forms gate their final submit on `verified`,
+        so loading no longer waits for Google's script.
+      */}
+      {children}
+      {ready && !verified && !message && (
+        <div
+          role="status"
+          aria-live="polite"
+          style={{
+            position: "fixed",
+            top: 12,
+            left: "50%",
+            transform: "translateX(-50%)",
+            zIndex: 10000,
+            display: "flex",
+            alignItems: "center",
+            gap: 8,
+            padding: "8px 14px",
+            borderRadius: 999,
+            background: "rgba(1, 2, 5, 0.82)",
+            color: "#fff",
+            font: "500 12px/1.2 system-ui, sans-serif",
+            pointerEvents: "none",
+          }}
+        >
+          <span
+            aria-hidden="true"
+            style={{
+              width: 12,
+              height: 12,
+              border: "2px solid #fff",
+              borderBottomColor: "transparent",
+              borderRadius: "50%",
+              display: "inline-block",
+              animation: "captcha-gate-spin 1s linear infinite",
+            }}
+          />
+          Verifying browser…
+        </div>
+      )}
       {ready && !verified && !message && (
         <div style={{ position: "relative", zIndex: 10000 }}>
           <CaptchaWidgetBoundary key={attempt} onError={fail}>
@@ -116,8 +159,7 @@ export default function InvisibleCaptchaGate({ children }) {
           </CaptchaWidgetBoundary>
         </div>
       )}
-      {verified && children}
-      <LoadingScreen isVisible={!verified && !message} />
+      <style jsx global>{`@keyframes captcha-gate-spin { to { transform: rotate(360deg); } }`}</style>
       {!verified && message && (
         <div role="alert" style={{ position: "fixed", inset: 0, zIndex: 10001, display: "grid", placeItems: "center", padding: 24, background: "#010205", color: "#fff", textAlign: "center" }}>
           <div>

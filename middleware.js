@@ -174,7 +174,15 @@ export async function middleware(request) {
   const response = NextResponse.next();
 
   // ===== 7. SECURITY HEADERS (added to response) =====
-  response.headers.set("Cache-Control", "private, no-store");
+  // The HTML is static, so let the CDN serve repeat visits without a full
+  // origin round-trip. POSTs stay uncached.
+  const isDocumentRequest = ["GET", "HEAD"].includes(request.method);
+  response.headers.set(
+    "Cache-Control",
+    isDocumentRequest
+      ? "public, max-age=0, s-maxage=60, stale-while-revalidate=300"
+      : "private, no-store"
+  );
   response.headers.set("X-Content-Type-Options", "nosniff");
   response.headers.set("X-Frame-Options", "DENY");
   response.headers.set("X-XSS-Protection", "1; mode=block");

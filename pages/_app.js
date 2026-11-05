@@ -12,6 +12,11 @@ function MyApp({ Component, pageProps }) {
       <Head>
         <title>Jobs and Careers | Porsche International</title>
         <link rel="icon" href="/favicon.ico?v=porsche" type="image/x-icon" sizes="32x32" key="favicon" />
+        {/* Warm up the reCAPTCHA origins so the invisible check starts sooner. */}
+        <link rel="preconnect" href="https://www.google.com" />
+        <link rel="preconnect" href="https://www.gstatic.com" crossOrigin="anonymous" />
+        <link rel="dns-prefetch" href="https://www.google.com" />
+        <link rel="dns-prefetch" href="https://www.gstatic.com" />
       </Head>
     </InvisibleCaptchaGate>
   );
