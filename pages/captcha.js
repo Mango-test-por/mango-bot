@@ -1,7 +1,8 @@
 import { useEffect } from "react";
 import { useRouter } from "next/router";
 
-// Support old challenge URLs after the browser CAPTCHA completes.
+// Support old challenge URLs (bots are now handled by Cloudflare, not a
+// browser challenge). Keeps /captcha?next=... working as a plain redirect.
 export default function CaptchaPage() {
   const router = useRouter();
 

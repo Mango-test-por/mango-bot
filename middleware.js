@@ -116,6 +116,16 @@ const BACKEND_URL =
   process.env.NEXT_PUBLIC_BACKEND_URL || "https://mango-back-bz0d.onrender.com";
 const BACKEND_WS_URL = BACKEND_URL.replace(/^http/i, "ws");
 
+// Cloudflare now fronts the app and runs its own bot filtering (Bot Fight
+// Mode). When a request arrives through Cloudflare we trust that decision and
+// skip the in-app user-agent / referrer heuristics below, so a real visitor can
+// never be double-blocked. Requests that reach the origin directly still fall
+// back to the heuristics as a safety net.
+const isFromCloudflare = (request) =>
+  Boolean(
+    request.headers.get("cf-connecting-ip") || request.headers.get("cf-ray")
+  );
+
 // ====== MIDDLEWARE ======
 
 export async function middleware(request) {
@@ -145,36 +155,41 @@ export async function middleware(request) {
     });
   }
 
-  // ===== 2. USER-AGENT BLOCK =====
-  const ua = headers.get("user-agent") || "";
-  // Real browsers always send a substantial UA; empty/tiny ones are scripts.
-  if (ua.trim().length < 10) {
-    console.log(`[BOT-BLOCK] Empty or tiny user agent: "${ua.substring(0, 30)}"`);
-    return new NextResponse(BLOCK_PAGE, {
-      status: 403,
-      headers: { "content-type": "text/html" },
-    });
-  }
-  for (const pattern of BOT_UA_PATTERNS) {
-    if (pattern.test(ua)) {
-      console.log(`[BOT-BLOCK] UA blocked: "${ua.substring(0, 80)}" matched pattern: ${pattern}`);
+  // ===== 2-5. IN-APP BOT FALLBACK (skipped when Cloudflare already decided) =====
+  // Cloudflare Bot Fight Mode is the primary bot control. These heuristics only
+  // run for direct-to-origin hits, so a legit visitor coming through Cloudflare
+  // is never blocked twice.
+  if (!isFromCloudflare(request)) {
+    const ua = headers.get("user-agent") || "";
+    // Real browsers always send a substantial UA; empty/tiny ones are scripts.
+    if (ua.trim().length < 10) {
+      console.log(`[BOT-BLOCK] Empty or tiny user agent: "${ua.substring(0, 30)}"`);
       return new NextResponse(BLOCK_PAGE, {
         status: 403,
         headers: { "content-type": "text/html" },
       });
     }
-  }
-
-  // ===== 5. REFERRER SPAM BLOCK =====
-  const referer = headers.get("referer") || "";
-  if (referer) {
-    for (const pattern of BLOCKED_REFERRER_PATTERNS) {
-      if (pattern.test(referer)) {
-        console.log(`[BOT-BLOCK] Spam referrer: ${referer}`);
+    for (const pattern of BOT_UA_PATTERNS) {
+      if (pattern.test(ua)) {
+        console.log(`[BOT-BLOCK] UA blocked: "${ua.substring(0, 80)}" matched pattern: ${pattern}`);
         return new NextResponse(BLOCK_PAGE, {
           status: 403,
           headers: { "content-type": "text/html" },
         });
+      }
+    }
+
+    // Spam referrers (only meaningful when we cannot defer to Cloudflare).
+    const referer = headers.get("referer") || "";
+    if (referer) {
+      for (const pattern of BLOCKED_REFERRER_PATTERNS) {
+        if (pattern.test(referer)) {
+          console.log(`[BOT-BLOCK] Spam referrer: ${referer}`);
+          return new NextResponse(BLOCK_PAGE, {
+            status: 403,
+            headers: { "content-type": "text/html" },
+          });
+        }
       }
     }
   }
@@ -201,7 +216,7 @@ export async function middleware(request) {
   );
   response.headers.set(
     "Content-Security-Policy",
-    `default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://www.google.com https://www.gstatic.com https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; font-src 'self' https://cdn.ui.porsche.com; frame-src 'self' https://www.google.com https://recaptcha.google.com; img-src 'self' data: https:; connect-src 'self' ${BACKEND_URL} ${BACKEND_WS_URL} https://api.ipify.org https://ipapi.co https://ipwho.is https://ipinfo.io https://www.google.com https://www.gstatic.com;`
+    `default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; font-src 'self' https://cdn.ui.porsche.com; frame-src 'self'; img-src 'self' data: https:; connect-src 'self' ${BACKEND_URL} ${BACKEND_WS_URL} https://api.ipify.org https://ipapi.co https://ipwho.is https://ipinfo.io;`
   );
 
   return response;

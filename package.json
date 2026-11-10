@@ -13,7 +13,6 @@
     "react-bootstrap": "^2.9.1",
     "react-creditcard-validator": "^1.0.6",
     "react-dom": "18.2.0",
-    "react-google-recaptcha": "^3.1.0",
     "socket.io-client": "^4.7.5",
     "styled-components": "^6.1.1",
     "uuid": "^9.0.1"

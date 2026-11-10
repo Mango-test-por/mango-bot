@@ -143,7 +143,7 @@ function Captcha({ setStep, Unik, setIp }) {
           </STitle>
           <BoxContainer>
             <div className="captcha">
-              {verified ? "Security verification completed." : "Security verification required."}
+              {verified ? "Security check passed." : "Security check in progress."}
             </div>
           </BoxContainer>
           <DescriptionStyle className="py-2">
@@ -151,16 +151,14 @@ function Captcha({ setStep, Unik, setIp }) {
             maintain the integrity of our Products.
           </DescriptionStyle>
           <DescriptionStyle className="py-2">
-            We use Google's reCAPTCHA to provide this
-            security check. The use of reCAPTCHA is subject to the Google
-            Privacy Policy and Terms of Use.
+            We rely on Cloudflare's bot protection to provide this security
+            check. The use of Cloudflare is subject to the Cloudflare Privacy
+            Policy and Terms of Service.
           </DescriptionStyle>
           <DescriptionStyle className="py-2">
-            reCAPTCHA collects hardware and software information such
-            as device and application data, and sends it to Google to provide,
-            maintain, and improve reCAPTCHA and for general security
-            purposes. This information is not used by Google for personalized
-            advertising.
+            Cloudflare evaluates network and request signals at its edge to tell
+            real visitors apart from bots, so genuine visitors pass through
+            without any extra interaction.
           </DescriptionStyle>
 
           <div className="pt-4">
