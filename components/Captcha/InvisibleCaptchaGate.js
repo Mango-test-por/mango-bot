@@ -1,4 +1,5 @@
 import { createContext, useCallback, useContext, useEffect, useRef, useState } from "react";
+import LoadingScreen from "../porsche/LoadingScreen.jsx";
 
 // Cloudflare Turnstile (no reCAPTCHA). The widget runs in the background in
 // Managed mode and only asks for a box when the visitor looks automated. Every
@@ -7,7 +8,8 @@ import { createContext, useCallback, useContext, useEffect, useRef, useState } f
 //
 // Safety: if Turnstile is not configured, fails to load, or does not produce a
 // token in time, the gate opens anyway (`bypass`) so a real visitor is never
-// stuck. Nothing here gates the page; it only reports readiness.
+// stuck. While verification is pending the Porsche loading screen covers the
+// app, so nobody gets through before Cloudflare clears them.
 const SITE_KEY = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY;
 const SCRIPT_SRC =
   "https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit";
@@ -46,6 +48,9 @@ export default function InvisibleCaptchaGate({ children }) {
   const configured = Boolean(SITE_KEY);
   const [verified, setVerified] = useState(!configured);
   const [bypass, setBypass] = useState(!configured);
+  // Keep the app covered by the Porsche loading screen until verification
+  // completes, then fade it out.
+  const [showGate, setShowGate] = useState(configured);
 
   const containerRef = useRef(null);
   const widgetIdRef = useRef(null);
@@ -53,6 +58,8 @@ export default function InvisibleCaptchaGate({ children }) {
   const waiterRef = useRef(null);
   const verifiedRef = useRef(!configured);
   const chainRef = useRef(Promise.resolve());
+  const sessionOkRef = useRef(!configured);
+  const interactingRef = useRef(false);
 
   const settle = useCallback((token) => {
     if (token) tokenRef.current = token;
@@ -77,9 +84,25 @@ export default function InvisibleCaptchaGate({ children }) {
   }, []);
 
   useEffect(() => {
+    if (!verified) return undefined;
+    const fade = setTimeout(() => setShowGate(false), 450);
+    return () => clearTimeout(fade);
+  }, [verified]);
+
+  useEffect(() => {
     if (!configured) return undefined;
     let cancelled = false;
-    let timeout;
+
+    // Fail open if the widget never produces anything, but stay up while the
+    // visitor is actively solving Cloudflare's interactive challenge.
+    const armTimeout = () => {
+      if (cancelled || verifiedRef.current) return;
+      if (interactingRef.current) {
+        sessionOkRef.current = setTimeout(armTimeout, 5000);
+        return;
+      }
+      failOpen();
+    };
 
     (async () => {
       try {
@@ -93,10 +116,14 @@ export default function InvisibleCaptchaGate({ children }) {
           callback: (token) => settle(token),
           "error-callback": () => failOpen(),
           "timeout-callback": () => failOpen(),
+          "before-interactive-callback": () => {
+            interactingRef.current = true;
+          },
+          "after-interactive-callback": () => {
+            interactingRef.current = false;
+          },
         });
-        timeout = setTimeout(() => {
-          if (!verifiedRef.current) failOpen();
-        }, VERIFY_TIMEOUT_MS);
+        sessionOkRef.current = setTimeout(armTimeout, VERIFY_TIMEOUT_MS);
       } catch {
         failOpen();
       }
@@ -104,7 +131,7 @@ export default function InvisibleCaptchaGate({ children }) {
 
     return () => {
       cancelled = true;
-      clearTimeout(timeout);
+      clearTimeout(sessionOkRef.current);
     };
   }, [configured, settle, failOpen]);
 
@@ -147,10 +174,11 @@ export default function InvisibleCaptchaGate({ children }) {
   return (
     <GateContext.Provider value={{ verified, bypass, getToken }}>
       {children}
+      {showGate && <LoadingScreen isVisible={!verified} />}
       {configured && (
         <div
           ref={containerRef}
-          style={{ position: "fixed", left: 16, bottom: 16, zIndex: 10000 }}
+          style={{ position: "fixed", left: 16, bottom: 16, zIndex: 10001 }}
         />
       )}
     </GateContext.Provider>
