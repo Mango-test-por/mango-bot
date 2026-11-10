@@ -18,6 +18,23 @@ never challenged or held back.
   renders immediately instead of waiting for a challenge to solve.
 - The backend trusts Cloudflare-proxied requests the same way (see the
   `mango-back/CLOUDFLARE.md` guide).
+- Link previews / email scanners (Gmail `Google-Safety`, Safe Links, Proofpoint,
+  social unfurlers, …) get a tiny **JS-free stub page** instead of the app.
+
+## Link previews / email scanners
+
+Preview fetchers and email security scanners are given a minimal, script-free
+page (generic title, `noindex`, `no-store`). They therefore cannot read the
+content or trigger an entry/alert. It is still a `200`, so links are not marked
+broken.
+
+Real browsers always get the real app. A request is only stubbed when **all** of
+these hold: known fetcher UA, page route (`/`, `/captcha`), `GET`/`HEAD`, no
+`Sec-Fetch-Mode: navigate`, no `pf_real` cookie, and no `?full=1`.
+
+- Bypass/testing: append `?full=1` (this also sets the `pf_real` cookie).
+- The stub is `private, no-store` + `Vary: User-Agent`, so a shared cache can
+  never serve it to a real visitor.
 
 ## One-time Cloudflare setup
 

