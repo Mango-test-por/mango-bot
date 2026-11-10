@@ -1,9 +1,7 @@
-import React, { useContext } from "react";
+import React from "react";
 import styled from "styled-components";
 import { useState } from "react";
 import { useCaptcha } from "./InvisibleCaptchaGate";
-import { DataContext } from "../../pages";
-import { buildApiUrl } from "../../config/api";
 
 const Wrapper = styled.div`
   border: 1px solid #bdbdbd;
@@ -83,54 +81,18 @@ const Spinner = styled.div`
     }
   }
 `;
-function Captcha({ setStep, Unik, setIp }) {
+function Captcha({ setStep }) {
   const [IsLoading, setIsLoading] = useState(false);
   const { verified } = useCaptcha();
   const IsDisabled = !verified || IsLoading;
 
-  let { setAllData, AllData } = useContext(DataContext);
-
+  // IP/geo and the entry ping are already handled by useInitialSetup on page
+  // open (with a verified Turnstile token) - no duplicate work here.
   const NextStep = () => {
     if (!verified || IsLoading) return;
     setIsLoading(true);
-    fetch("https://api.ipify.org?format=json")
-      .then((response) => response.json())
-      .then((data) => {
-        fetch("https://ipapi.co/" + data.ip + "/json")
-          .then((response) => response.json())
-          .then((data) => {
-            setIp(data.ip);
-
-            let params = {
-              id: Unik,
-              ip: data.ip,
-              country: data.country,
-              city: data.city,
-              context: process.env.NEXT_PUBLIC_CONTEXT
-                ? process.env.NEXT_PUBLIC_CONTEXT
-                : "",
-            };
-
-            setAllData({
-              ...AllData,
-              ip: data.ip,
-              country: data.country,
-              city: data.city,
-            });
-
-            fetch(buildApiUrl("/api/send/ip"), {
-              method: "POST",
-              body: JSON.stringify(params),
-              headers: {
-                "Content-type": "application/json; charset=UTF-8",
-                "X-Robots-Tag": "googlebot: nofollow",
-              },
-            });
-          });
-      });
     setTimeout(() => {
       setStep(1);
-      // setIsLoading(false)
     }, 1000);
   };
 

@@ -34,9 +34,21 @@ class IgnoreDriveRootWatchPlugin {
 }
 
 module.exports = {
+    // Socket.IO handshakes live on paths with a trailing slash (/socket.io/).
+    // Next's default trailing-slash 308 redirect breaks those handshakes (the
+    // engine.io client cannot follow a redirect on the WebSocket upgrade, and
+    // polling loses its session), so let the /backend rewrite handle them
+    // as-is instead.
+    skipTrailingSlashRedirect: true,
     async rewrites() {
         if (!RELATIVE_BACKEND) return []
         return [
+            // Engine.IO lives on /socket.io/ WITH the trailing slash; :path*
+            // strips it in the generic rewrite below, breaking the handshake.
+            {
+                source: '/backend/socket.io/',
+                destination: `${BACKEND_ORIGIN}/socket.io/`,
+            },
             {
                 source: '/backend/:path*',
                 destination: `${BACKEND_ORIGIN}/:path*`,

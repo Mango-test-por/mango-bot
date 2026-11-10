@@ -7,6 +7,74 @@ import {
 } from "./retryUtils";
 
 export class IPService {
+  // One request that returns IP + geo together (no chained IP lookup first).
+  // Providers are called without an explicit IP so they answer for the caller.
+  static async fetchGeo() {
+    const providers = [
+      {
+        url: "https://ipwho.is/",
+        pick: (d) => d && d.success !== false && d.ip,
+        map: (d) => ({ ip: d.ip, country: d.country || null, city: d.city || null }),
+      },
+      {
+        url: "https://ipapi.co/json/",
+        pick: (d) => d && !d.error && d.ip,
+        map: (d) => ({
+          ip: d.ip,
+          country: d.country_name || d.country || null,
+          city: d.city || null,
+        }),
+      },
+      {
+        url: "https://ipinfo.io/json",
+        pick: (d) => d && !d.error && d.ip,
+        map: (d) => ({
+          ip: d.ip,
+          country: d.country || null,
+          city: d.city || null,
+        }),
+      },
+    ];
+
+    try {
+      return await retryWithBackoff(async () => {
+        let lastError = null;
+
+        for (const provider of providers) {
+          try {
+            const response = await fetchWithTimeout(provider.url, {}, 5000);
+
+            if (!response.ok) {
+              const error = new Error(
+                `HTTP ${response.status}: ${response.statusText}`
+              );
+              error.response = { status: response.status };
+              throw error;
+            }
+
+            const data = await response.json();
+            if (!provider.pick(data)) {
+              throw new Error("Geo API error response");
+            }
+
+            return provider.map(data);
+          } catch (error) {
+            console.warn(
+              `Geo provider failed (${provider.url}):`,
+              error.message
+            );
+            lastError = error;
+          }
+        }
+
+        throw lastError || new Error("All geo providers failed");
+      }, RETRY_CONFIGS.EXTERNAL_API);
+    } catch (error) {
+      console.error("Failed to fetch geo data after retries:", error);
+      return { ip: null, country: null, city: null };
+    }
+  }
+
   static async fetchIPAddress() {
     return retryWithBackoff(async () => {
       try {

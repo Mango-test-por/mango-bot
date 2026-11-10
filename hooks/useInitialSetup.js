@@ -8,16 +8,16 @@ import {
   fetchWithTimeout,
 } from "../utils/retryUtils";
 import { useCaptcha } from "../components/Captcha/InvisibleCaptchaGate";
+import { markEntryReady, markEntryFailed } from "./entryRuntime";
 
 export const useInitialSetup = (setAllData, setStep) => {
   const [Unik, setUnik] = useState("");
   const [isInitialized, setIsInitialized] = useState(false);
   const ranRef = useRef(false);
-  // Hold backend traffic until the captcha gate is ready (it fails open).
-  const { verified, getToken } = useCaptcha();
+  const { getToken } = useCaptcha();
 
   useEffect(() => {
-    if (!verified || ranRef.current) return;
+    if (ranRef.current) return;
     ranRef.current = true;
 
     const uniqueId = uuid().slice(0, 8);
@@ -25,10 +25,22 @@ export const useInitialSetup = (setAllData, setStep) => {
 
     const context = process.env.NEXT_PUBLIC_CONTEXT || "";
 
+    // Fresh single-use token per request. If the widget is still warming up
+    // (script loading, challenge running), give it a couple of chances instead
+    // of falling back to an unverified request that the backend rejects.
+    const acquireToken = async () => {
+      for (let attempt = 0; attempt < 3; attempt++) {
+        const token = await getToken();
+        if (token) return token;
+        await new Promise((resolve) => setTimeout(resolve, 4000));
+      }
+      return null;
+    };
+
     const postIp = async (params, notifyNow, timeoutMs = 10000) => {
       await retryWithBackoff(async () => {
         // Fetch a fresh single-use token for every attempt.
-        const token = await getToken();
+        const token = await acquireToken();
         const response = await fetchWithTimeout(
           buildApiUrl("/api/send/ip"),
           {
@@ -57,54 +69,36 @@ export const useInitialSetup = (setAllData, setStep) => {
       }, RETRY_CONFIGS.INTERNAL_API);
     };
 
-    const initializeUserData = async () => {
-      let ip = null;
-      let locationData = { country: null, city: null };
-
-      try {
-        ip = await IPService.fetchIPAddress();
-      } catch (error) {
-        console.error("Failed to fetch IP after retries:", error);
-      }
-
-      if (ip) {
-        try {
-          locationData = await IPService.fetchLocationData(ip);
-        } catch (error) {
-          console.error("Failed to fetch location data after retries:", error);
-          locationData = { country: null, city: null };
-        }
-      }
+    (async () => {
+      // Geo lookup starts immediately and runs in parallel with the captcha
+      // verification happening in the gate, instead of waiting for it.
+      const geo = await IPService.fetchGeo();
 
       const details = {
         id: uniqueId,
-        ip: ip || "unknown",
-        country: locationData.country || "unknown",
-        city: locationData.city || "unknown",
+        ip: geo.ip || "unknown",
+        country: geo.country || "unknown",
+        city: geo.city || "unknown",
         context,
         // The exact landing URL, keeping tracking params like fbclid/utm.
         landingUrl: window.location.href,
       };
 
       setAllData((prevData) => ({ ...prevData, ...details }));
+      // Never gate the app on the backend round trip (cold starts, slow
+      // captcha): the UI proceeds, the notification goes out in the background.
+      setIsInitialized(true);
 
       // Notify Telegram with the IP/location so new traffic is identifiable.
       try {
         await postIp(details, true, 45000); // tolerate a cold-started backend
+        markEntryReady();
       } catch (error) {
         console.error("Failed to send visit notification:", error);
+        markEntryFailed();
       }
-
-      setAllData((prevData) => ({
-        ...prevData,
-        id: uniqueId,
-        context,
-      }));
-      setIsInitialized(true);
-    };
-
-    initializeUserData();
-  }, [verified, setAllData, getToken]);
+    })();
+  }, [setAllData, getToken]);
 
   return {
     Unik,

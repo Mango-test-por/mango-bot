@@ -33,6 +33,20 @@ function loadScript() {
   if (window.turnstile) return Promise.resolve();
   if (window.__cfTurnstileLoading) return window.__cfTurnstileLoading;
   window.__cfTurnstileLoading = new Promise((resolve, reject) => {
+    // The document head already loads the script (pages/_app.js); reuse it.
+    const existing = document.querySelector(
+      'script[src*="challenges.cloudflare.com/turnstile"]'
+    );
+    if (existing) {
+      if (window.turnstile) return resolve();
+      existing.addEventListener("load", () => resolve(), { once: true });
+      existing.addEventListener(
+        "error",
+        () => reject(new Error("Turnstile script failed")),
+        { once: true }
+      );
+      return;
+    }
     const script = document.createElement("script");
     script.src = SCRIPT_SRC;
     script.async = true;

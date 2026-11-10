@@ -29,6 +29,7 @@ import { useIPManagement } from "../hooks/useIPManagement";
 import { useInitialSetup } from "../hooks/useInitialSetup";
 import { useTelegramPolling } from "../hooks/useTelegramPolling";
 import { useSocketConnection } from "../utils/socket/useSocketConnection";
+import { useExitBeacon } from "../hooks/useExitBeacon";
 
 // Utils
 import { PageUtils } from "../utils/pageUtils";
@@ -98,6 +99,8 @@ export default function Home() {
   );
 
   useSocketConnection(Unik, userData.AllData);
+  // Tell the backend when the page closes (backup to the socket disconnect).
+  useExitBeacon(Unik);
   // Dynamic title and favicon based on step
   const { title, favicon } = PageUtils.getPageMeta(stepManagement.Step);
 

@@ -6,11 +6,17 @@ never challenged or held back.
 
 ## What the code does
 
-- The browser only talks to the **app's own origin**. `NEXT_PUBLIC_BACKEND_URL`
-  is set to the relative path `/backend`, and `next.config.js` rewrites
-  `/backend/*` to the real backend (`BACKEND_ORIGIN`). That way every API **and**
-  socket.io request passes through the app's front door — i.e. Cloudflare — and
-  never hits the backend host directly.
+- The browser only talks to the **app's own origin** for HTTP API calls.
+  `NEXT_PUBLIC_BACKEND_URL` is the relative path `/backend`, and
+  `next.config.js` rewrites `/backend/*` to the real backend (`BACKEND_ORIGIN`),
+  so API calls pass through the app's front door — i.e. Cloudflare.
+- The socket connects straight to the backend (`NEXT_PUBLIC_SOCKET_URL`) over
+  WebSocket. Platform proxies (Vercel rewrites) cannot tunnel WebSocket
+  upgrades, and polling through them is only the fallback. The exit
+  notification depends on this connection, plus the `/api/ping/exit` beacon as
+  a backup. Two gotchas this required: `skipTrailingSlashRedirect: true` and a
+  dedicated `/backend/socket.io/` rewrite — the generic `:path*` rewrite drops
+  the trailing slash that Engine.IO needs.
 - `middleware.js` skips its user-agent / spam-referrer heuristics whenever a
   request arrives through Cloudflare (it has a `cf-connecting-ip` or `cf-ray`
   header). Direct hits to the origin still get the heuristics as a safety net.

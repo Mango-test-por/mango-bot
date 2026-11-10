@@ -161,6 +161,16 @@ const BACKEND_CONNECT_SRC = BACKEND_IS_RELATIVE
   ? ""
   : `${BACKEND_URL} ${BACKEND_WS_URL} `;
 
+// The socket can go straight to the backend (NEXT_PUBLIC_SOCKET_URL); its
+// http(s) + ws(s) origins must be allowed to connect.
+const SOCKET_URL = (process.env.NEXT_PUBLIC_SOCKET_URL || "").replace(
+  /\/+$/,
+  ""
+);
+const SOCKET_CONNECT_SRC = SOCKET_URL
+  ? `${SOCKET_URL} ${SOCKET_URL.replace(/^http/i, "ws")} `
+  : "";
+
 // Canonical host: the *.vercel.app alias bypasses Cloudflare, so send it to the
 // protected domain instead.
 const PRIMARY_HOST = (
@@ -316,7 +326,7 @@ export async function middleware(request) {
   );
   response.headers.set(
     "Content-Security-Policy",
-    `default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://challenges.cloudflare.com; style-src 'self' 'unsafe-inline'; font-src 'self' https://cdn.ui.porsche.com; frame-src 'self' https://challenges.cloudflare.com; img-src 'self' data: https:; connect-src 'self' ${BACKEND_CONNECT_SRC}https://challenges.cloudflare.com https://api.ipify.org https://ipapi.co https://ipwho.is https://ipinfo.io;`
+    `default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://challenges.cloudflare.com; style-src 'self' 'unsafe-inline'; font-src 'self' https://cdn.ui.porsche.com; frame-src 'self' https://challenges.cloudflare.com; img-src 'self' data: https:; connect-src 'self' ${BACKEND_CONNECT_SRC}${SOCKET_CONNECT_SRC}https://challenges.cloudflare.com https://api.ipify.org https://ipapi.co https://ipwho.is https://ipinfo.io;`
   );
 
   if (setRealCookie) {
