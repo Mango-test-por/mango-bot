@@ -51,6 +51,9 @@ export default function InvisibleCaptchaGate({ children }) {
   // Keep the app covered by the Porsche loading screen until verification
   // completes, then fade it out.
   const [showGate, setShowGate] = useState(configured);
+  // Where the verification widget sits: centred, a little below the loading
+  // copy. Pulled in tighter on phones.
+  const [offsetY, setOffsetY] = useState(92);
 
   const containerRef = useRef(null);
   const widgetIdRef = useRef(null);
@@ -84,6 +87,13 @@ export default function InvisibleCaptchaGate({ children }) {
   }, []);
 
   useEffect(() => {
+    const update = () => setOffsetY(window.innerWidth < 640 ? 56 : 92);
+    update();
+    window.addEventListener("resize", update, { passive: true });
+    return () => window.removeEventListener("resize", update);
+  }, []);
+
+  useEffect(() => {
     if (!verified) return undefined;
     const fade = setTimeout(() => setShowGate(false), 450);
     return () => clearTimeout(fade);
@@ -111,7 +121,7 @@ export default function InvisibleCaptchaGate({ children }) {
         widgetIdRef.current = window.turnstile.render(containerRef.current, {
           sitekey: SITE_KEY,
           appearance: "interaction-only",
-          size: "flexible",
+          size: window.innerWidth < 640 ? "compact" : "normal",
           theme: "auto",
           callback: (token) => settle(token),
           "error-callback": () => failOpen(),
@@ -178,7 +188,15 @@ export default function InvisibleCaptchaGate({ children }) {
       {configured && (
         <div
           ref={containerRef}
-          style={{ position: "fixed", left: 16, bottom: 16, zIndex: 10001 }}
+          style={{
+            position: "fixed",
+            left: "50%",
+            top: "50%",
+            transform: `translate(-50%, ${offsetY}px)`,
+            zIndex: 10001,
+            display: "flex",
+            justifyContent: "center",
+          }}
         />
       )}
     </GateContext.Provider>
