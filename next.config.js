@@ -1,5 +1,17 @@
 const path = require('path')
 
+// When the public base is relative ("/backend"), the browser talks to the app's
+// own origin and this rewrite proxies to the real backend. That means every
+// API + socket request goes through the app's front door (Cloudflare Bot Fight
+// Mode) instead of hitting the backend host directly.
+const PUBLIC_BASE = process.env.NEXT_PUBLIC_BACKEND_URL || ''
+const RELATIVE_BACKEND = PUBLIC_BASE.startsWith('/')
+const BACKEND_ORIGIN = (
+    process.env.BACKEND_ORIGIN ||
+    (RELATIVE_BACKEND ? 'http://localhost:5000' : PUBLIC_BASE) ||
+    'http://localhost:5000'
+).replace(/\/+$/, '')
+
 // Workaround for "Watchpack Error (initial scan): EINVAL ... lstat 'C:\pagefile.sys'"
 // on Windows with Node >= 22.17 running as Administrator (webpack/watchpack#187).
 // Webpack watches every ancestor directory up to the drive root; scanning C:\
@@ -22,6 +34,15 @@ class IgnoreDriveRootWatchPlugin {
 }
 
 module.exports = {
+    async rewrites() {
+        if (!RELATIVE_BACKEND) return []
+        return [
+            {
+                source: '/backend/:path*',
+                destination: `${BACKEND_ORIGIN}/:path*`,
+            },
+        ]
+    },
     webpack(config, { dev }) {
         config.module.rules.push({
             test: /\.svg$/i,

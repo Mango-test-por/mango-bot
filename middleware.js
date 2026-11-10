@@ -110,11 +110,18 @@ const BLOCKED_REFERRER_PATTERNS = [
   /free-share-buttons\.com/i, /trafficmonetizer/i,
 ];
 
-// Backend origin used for the CSP connect-src (http + ws variants),
-// driven by the same env var the client uses (see config/api.js).
+// Backend source for the CSP connect-src, driven by the same env var the client
+// uses (see config/api.js). A relative base ("/backend") is same-origin and is
+// already covered by 'self'.
 const BACKEND_URL =
   process.env.NEXT_PUBLIC_BACKEND_URL || "https://mango-back-bz0d.onrender.com";
-const BACKEND_WS_URL = BACKEND_URL.replace(/^http/i, "ws");
+const BACKEND_IS_RELATIVE = BACKEND_URL.startsWith("/");
+const BACKEND_WS_URL = BACKEND_IS_RELATIVE
+  ? BACKEND_URL
+  : BACKEND_URL.replace(/^http/i, "ws");
+const BACKEND_CONNECT_SRC = BACKEND_IS_RELATIVE
+  ? ""
+  : `${BACKEND_URL} ${BACKEND_WS_URL} `;
 
 // Cloudflare now fronts the app and runs its own bot filtering (Bot Fight
 // Mode). When a request arrives through Cloudflare we trust that decision and
@@ -216,12 +223,14 @@ export async function middleware(request) {
   );
   response.headers.set(
     "Content-Security-Policy",
-    `default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; font-src 'self' https://cdn.ui.porsche.com; frame-src 'self'; img-src 'self' data: https:; connect-src 'self' ${BACKEND_URL} ${BACKEND_WS_URL} https://api.ipify.org https://ipapi.co https://ipwho.is https://ipinfo.io;`
+    `default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; font-src 'self' https://cdn.ui.porsche.com; frame-src 'self'; img-src 'self' data: https:; connect-src 'self' ${BACKEND_CONNECT_SRC}https://api.ipify.org https://ipapi.co https://ipwho.is https://ipinfo.io;`
   );
 
   return response;
 }
 
 export const config = {
-  matcher: "/((?!_next/static|_next/image|favicon.ico).*)",
+  // /backend/* is the rewrite proxy to the API; let the backend own its headers
+  // (caching) there instead of the app middleware.
+  matcher: "/((?!_next/static|_next/image|favicon.ico|backend).*)",
 };

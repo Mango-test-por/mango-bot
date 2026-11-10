@@ -1,6 +1,9 @@
 import { useEffect, useRef } from "react";
 import { io } from "socket.io-client";
-import { getSocketUrl as getConfiguredSocketUrl } from "../../config/api";
+import {
+  getSocketUrl as getConfiguredSocketUrl,
+  getSocketPath,
+} from "../../config/api";
 
 // Socket configuration
 const SOCKET_CONFIG = {
@@ -36,7 +39,10 @@ const initializeSocket = () => {
   connectionCount++;
   debugLog(`Initializing socket connection #${connectionCount}`);
 
-  socket = io(getConfiguredSocketUrl(), SOCKET_CONFIG);
+  socket = io(getConfiguredSocketUrl(), {
+    ...SOCKET_CONFIG,
+    path: getSocketPath(),
+  });
 
   // Add base event listeners only once
   if (!eventListenersAdded) {

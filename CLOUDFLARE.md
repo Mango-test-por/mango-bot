@@ -6,6 +6,11 @@ never challenged or held back.
 
 ## What the code does
 
+- The browser only talks to the **app's own origin**. `NEXT_PUBLIC_BACKEND_URL`
+  is set to the relative path `/backend`, and `next.config.js` rewrites
+  `/backend/*` to the real backend (`BACKEND_ORIGIN`). That way every API **and**
+  socket.io request passes through the app's front door — i.e. Cloudflare — and
+  never hits the backend host directly.
 - `middleware.js` skips its user-agent / spam-referrer heuristics whenever a
   request arrives through Cloudflare (it has a `cf-connecting-ip` or `cf-ray`
   header). Direct hits to the origin still get the heuristics as a safety net.
