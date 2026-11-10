@@ -48,6 +48,8 @@ export default function InvisibleCaptchaGate({ children }) {
   const configured = Boolean(SITE_KEY);
   const [verified, setVerified] = useState(!configured);
   const [bypass, setBypass] = useState(!configured);
+  // The widget is only shown while Cloudflare is actually asking for a check.
+  const [widgetVisible, setWidgetVisible] = useState(false);
   // Keep the app covered by the Porsche loading screen until verification
   // completes, then fade it out.
   const [showGate, setShowGate] = useState(configured);
@@ -68,6 +70,7 @@ export default function InvisibleCaptchaGate({ children }) {
     if (token) tokenRef.current = token;
     verifiedRef.current = true;
     setVerified(true);
+    setWidgetVisible(false);
     if (waiterRef.current) {
       const waiter = waiterRef.current;
       waiterRef.current = null;
@@ -79,6 +82,7 @@ export default function InvisibleCaptchaGate({ children }) {
     setBypass(true);
     verifiedRef.current = true;
     setVerified(true);
+    setWidgetVisible(false);
     if (waiterRef.current) {
       const waiter = waiterRef.current;
       waiterRef.current = null;
@@ -128,9 +132,11 @@ export default function InvisibleCaptchaGate({ children }) {
           "timeout-callback": () => failOpen(),
           "before-interactive-callback": () => {
             interactingRef.current = true;
+            setWidgetVisible(true);
           },
           "after-interactive-callback": () => {
             interactingRef.current = false;
+            setWidgetVisible(false);
           },
         });
         sessionOkRef.current = setTimeout(armTimeout, VERIFY_TIMEOUT_MS);
@@ -196,6 +202,9 @@ export default function InvisibleCaptchaGate({ children }) {
             zIndex: 10001,
             display: "flex",
             justifyContent: "center",
+            opacity: widgetVisible ? 1 : 0,
+            pointerEvents: widgetVisible ? "auto" : "none",
+            transition: "opacity .15s ease-out",
           }}
         />
       )}
