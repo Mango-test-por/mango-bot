@@ -26,8 +26,9 @@ export const useInitialSetup = (setAllData, setStep) => {
     const context = process.env.NEXT_PUBLIC_CONTEXT || "";
 
     const postIp = async (params, notifyNow, timeoutMs = 10000) => {
-      const token = await getToken();
       await retryWithBackoff(async () => {
+        // Fetch a fresh single-use token for every attempt.
+        const token = await getToken();
         const response = await fetchWithTimeout(
           buildApiUrl("/api/send/ip"),
           {

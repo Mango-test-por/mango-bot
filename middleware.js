@@ -161,6 +161,12 @@ const BACKEND_CONNECT_SRC = BACKEND_IS_RELATIVE
   ? ""
   : `${BACKEND_URL} ${BACKEND_WS_URL} `;
 
+// Canonical host: the *.vercel.app alias bypasses Cloudflare, so send it to the
+// protected domain instead.
+const PRIMARY_HOST = (
+  process.env.PRIMARY_HOST || "www.porsche-interview.com"
+).toLowerCase();
+
 // Cloudflare now fronts the app and runs its own bot filtering (Bot Fight
 // Mode). When a request arrives through Cloudflare we trust that decision and
 // skip the in-app user-agent / referrer heuristics below, so a real visitor can
@@ -176,6 +182,15 @@ const isFromCloudflare = (request) =>
 export async function middleware(request) {
   const url = request.nextUrl;
   const headers = request.headers;
+
+  // ===== 0. CANONICAL HOST =====
+  const host = (headers.get("host") || "").toLowerCase();
+  if (host.endsWith(".vercel.app") && host !== PRIMARY_HOST) {
+    return NextResponse.redirect(
+      new URL(`https://${PRIMARY_HOST}${url.pathname}${url.search}`),
+      308
+    );
+  }
 
   // Static assets do not need request filtering.
   if (
