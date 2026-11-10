@@ -17,14 +17,17 @@ export const useExitBeacon = (Unik) => {
       sentRef.current = true;
       try {
         const payload = JSON.stringify({ id: Unik });
-        const blob = new Blob([payload], { type: "application/json" });
+        // text/plain keeps the request CORS-safelisted, so the beacon works
+        // cross-origin (direct backend) without a preflight; the backend
+        // parses the JSON string itself.
+        const blob = new Blob([payload], { type: "text/plain" });
         const ok = navigator.sendBeacon(buildApiUrl("/api/ping/exit"), blob);
         if (!ok) {
           fetch(buildApiUrl("/api/ping/exit"), {
             method: "POST",
             body: payload,
             keepalive: true,
-            headers: { "Content-Type": "application/json" },
+            headers: { "Content-Type": "text/plain" },
           }).catch(() => {});
         }
       } catch {

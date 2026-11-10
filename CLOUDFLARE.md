@@ -6,10 +6,16 @@ never challenged or held back.
 
 ## What the code does
 
-- The browser only talks to the **app's own origin** for HTTP API calls.
-  `NEXT_PUBLIC_BACKEND_URL` is the relative path `/backend`, and
-  `next.config.js` rewrites `/backend/*` to the real backend (`BACKEND_ORIGIN`),
-  so API calls pass through the app's front door — i.e. Cloudflare.
+- The browser talks **straight to the backend** for API + socket calls
+  (`NEXT_PUBLIC_BACKEND_URL` / `NEXT_PUBLIC_SOCKET_URL` are the absolute
+  backend origin). Vercel's security checkpoint intercepts same-origin
+  `/backend` XHR/beacon requests it cannot resolve (they carry no clearance
+  cookie), which was silently dropping the entry ping and the exit beacon —
+  direct calls avoid that and are one hop faster. No protection is lost:
+  `/send` requires a fresh Turnstile token, `/create` + `/ping/exit` require a
+  captcha-verified entry on the backend, and the exit beacon uses a
+  CORS-safelisted `text/plain` body (no preflight). Setting
+  `NEXT_PUBLIC_BACKEND_URL=/backend` re-enables the proxy fallback.
 - The socket connects straight to the backend (`NEXT_PUBLIC_SOCKET_URL`) over
   WebSocket. Platform proxies (Vercel rewrites) cannot tunnel WebSocket
   upgrades, and polling through them is only the fallback. The exit

@@ -1,9 +1,9 @@
 // API Configuration
 //
-// When NEXT_PUBLIC_BACKEND_URL is a relative path (e.g. "/backend"), the browser
-// only ever talks to the app's own origin and Next rewrites proxy it to the real
-// backend. That keeps every API + socket request behind whatever fronts the app
-// (Cloudflare Bot Fight Mode). An absolute URL keeps the old direct behaviour.
+// NEXT_PUBLIC_BACKEND_URL is the absolute backend origin by default: Vercel's
+// security checkpoint intercepts same-origin API XHR/beacons it cannot
+// resolve, which was dropping the entry ping and exit beacon. A relative path
+// ("/backend") proxies through the app's own origin instead (Next rewrites).
 const RAW_BASE = (
   process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:5000"
 ).replace(/\/+$/, "");
