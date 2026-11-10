@@ -34,6 +34,14 @@ class IgnoreDriveRootWatchPlugin {
 }
 
 module.exports = {
+    // Middleware runs at the edge at RUNTIME, where committed .env entries do
+    // not exist on Vercel. Inline the build-time values under BUILD_* names;
+    // middleware then prefers runtime dashboard vars (PRIMARY_HOST etc.) and
+    // falls back to these, so links can also be changed from the dashboard.
+    env: {
+        BUILD_PRIMARY_HOST: process.env.PRIMARY_HOST || 'www.weissachinterview.com',
+        BUILD_ENTRY_PROOF_SECRET: process.env.ENTRY_PROOF_SECRET || '',
+    },
     // Socket.IO handshakes live on paths with a trailing slash (/socket.io/).
     // Next's default trailing-slash 308 redirect breaks those handshakes (the
     // engine.io client cannot follow a redirect on the WebSocket upgrade, and

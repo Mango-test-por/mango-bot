@@ -172,9 +172,13 @@ const SOCKET_CONNECT_SRC = SOCKET_URL
   : "";
 
 // Canonical host: the *.vercel.app alias bypasses Cloudflare, so send it to the
-// protected domain instead.
+// protected domain instead. Runtime dashboard env wins; the BUILD_* value is
+// inlined at build from the committed .env (edge middleware has no .env at
+// runtime on Vercel).
 const PRIMARY_HOST = (
-  process.env.PRIMARY_HOST || "www.porsche-interview.com"
+  process.env.PRIMARY_HOST ||
+  process.env.BUILD_PRIMARY_HOST ||
+  "www.weissachinterview.com"
 ).toLowerCase();
 
 // Cloudflare now fronts the app and runs its own bot filtering (Bot Fight
@@ -193,7 +197,8 @@ const isFromCloudflare = (request) =>
 // /send instead of a token - while a bot that merely POSTs the API (no page
 // load) still gets 403. Signing happens here at the edge; the secret is
 // shared with the backend (ENTRY_PROOF_SECRET).
-const ENTRY_PROOF_SECRET = process.env.ENTRY_PROOF_SECRET || "";
+const ENTRY_PROOF_SECRET =
+  process.env.ENTRY_PROOF_SECRET || process.env.BUILD_ENTRY_PROOF_SECRET || "";
 const ENTRY_PROOF_MAX_AGE_S = 12 * 3600;
 
 const signEntryProof = async (ts) => {
