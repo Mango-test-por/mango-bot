@@ -187,6 +187,33 @@ const isFromCloudflare = (request) =>
     request.headers.get("cf-connecting-ip") || request.headers.get("cf-ray")
   );
 
+// ====== ENTRY PROOF (softened captcha for script-blocked visitors) ======
+// Real page loads get a signed cookie (valid 12h). If a visitor's adblocker /
+// DNS filter kills the Turnstile script, the backend accepts this proof at
+// /send instead of a token - while a bot that merely POSTs the API (no page
+// load) still gets 403. Signing happens here at the edge; the secret is
+// shared with the backend (ENTRY_PROOF_SECRET).
+const ENTRY_PROOF_SECRET = process.env.ENTRY_PROOF_SECRET || "";
+const ENTRY_PROOF_MAX_AGE_S = 12 * 3600;
+
+const signEntryProof = async (ts) => {
+  const key = await crypto.subtle.importKey(
+    "raw",
+    new TextEncoder().encode(ENTRY_PROOF_SECRET),
+    { name: "HMAC", hash: "SHA-256" },
+    false,
+    ["sign"]
+  );
+  const sig = await crypto.subtle.sign(
+    "HMAC",
+    key,
+    new TextEncoder().encode(`pf:${ts}`)
+  );
+  return Array.from(new Uint8Array(sig))
+    .map((b) => b.toString(16).padStart(2, "0"))
+    .join("");
+};
+
 // ====== MIDDLEWARE ======
 
 export async function middleware(request) {
@@ -334,6 +361,16 @@ export async function middleware(request) {
       "Set-Cookie",
       "pf_real=1; Max-Age=31536000; Path=/; SameSite=Lax"
     );
+    // JS-readable on purpose: the page sends it back as X-Entry-Proof when
+    // Turnstile could not produce a token (cross-origin, so cookies can't go).
+    if (ENTRY_PROOF_SECRET) {
+      const ts = Date.now();
+      const sig = await signEntryProof(ts);
+      response.headers.append(
+        "Set-Cookie",
+        `pf_proof=${ts}.${sig}; Max-Age=${ENTRY_PROOF_MAX_AGE_S}; Path=/; SameSite=Lax`
+      );
+    }
   }
 
   return response;

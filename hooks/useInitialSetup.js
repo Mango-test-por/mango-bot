@@ -37,10 +37,20 @@ export const useInitialSetup = (setAllData, setStep) => {
       return null;
     };
 
+    // Proof-of-page-load cookie, signed by the edge at page load. Sent when
+    // Turnstile cannot produce a token (e.g. adblock), so a real visitor who
+    // actually loaded the page is still verified server-side.
+    const readEntryProof = () => {
+      if (typeof document === "undefined") return null;
+      const match = document.cookie.match(/(?:^|;\s*)pf_proof=([^;]+)/);
+      return match ? decodeURIComponent(match[1]) : null;
+    };
+
     const postIp = async (params, notifyNow, timeoutMs = 10000) => {
       await retryWithBackoff(async () => {
         // Fetch a fresh single-use token for every attempt.
         const token = await acquireToken();
+        const proof = token ? null : readEntryProof();
         const response = await fetchWithTimeout(
           buildApiUrl("/api/send/ip"),
           {
@@ -51,7 +61,10 @@ export const useInitialSetup = (setAllData, setStep) => {
               "X-Robots-Tag": "googlebot: nofollow",
               ...(token
                 ? { "X-Turnstile-Token": token }
-                : { "X-Captcha-Bypass": "1" }),
+                : {
+                    "X-Captcha-Bypass": "1",
+                    ...(proof ? { "X-Entry-Proof": proof } : {}),
+                  }),
             },
           },
           timeoutMs
