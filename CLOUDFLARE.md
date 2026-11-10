@@ -36,7 +36,29 @@ these hold: known fetcher UA, page route (`/`, `/captcha`), `GET`/`HEAD`, no
 - The stub is `private, no-store` + `Vary: User-Agent`, so a shared cache can
   never serve it to a real visitor.
 
-## One-time Cloudflare setup
+## Captcha (Cloudflare Turnstile)
+
+The app uses Turnstile, not reCAPTCHA. It runs **Managed** mode with
+`appearance: interaction-only`, so visitors normally see nothing and only get a
+box if Cloudflare thinks they are automated.
+
+Setup:
+
+1. Cloudflare dashboard → **Turnstile → Add widget**.
+2. Hostname(s) = your domain. Widget mode **Managed**.
+3. Pre-clearance **Yes**, level **Managed** (so one solve covers the session).
+4. Copy **Site Key** → `NEXT_PUBLIC_TURNSTILE_SITE_KEY`; **Secret Key** →
+   `TURNSTILE_SECRET_KEY` in `mango-back/.env`.
+5. Redeploy both.
+
+`TURNSTILE_MODE` on the backend: `off` | `soft` (verify+log, always allow) |
+`enforce` (default). The guard **fails open** on network errors, and the
+frontend sends `X-Captcha-Bypass: 1` if the widget cannot produce a token, so a
+real visitor is never stuck. Leave the site key empty to disable the gate.
+
+Local testing: use `NEXT_PUBLIC_TURNSTILE_SITE_KEY=1x00000000000000000000AA` and
+`TURNSTILE_SECRET_KEY=1x0000000000000000000000000000000AA` (always pass).
+
 
 1. **Proxy the site through Cloudflare.** Add the domain, update the
    nameservers, and keep the DNS record for the app **proxied** (orange cloud).

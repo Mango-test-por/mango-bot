@@ -11,6 +11,7 @@ function MyApp({ Component, pageProps }) {
       <Head>
         <title>Jobs and Careers | Porsche International</title>
         <link rel="icon" href="/favicon.ico?v=porsche" type="image/x-icon" sizes="32x32" key="favicon" />
+        <link rel="preconnect" href="https://challenges.cloudflare.com" />
       </Head>
     </InvisibleCaptchaGate>
   );

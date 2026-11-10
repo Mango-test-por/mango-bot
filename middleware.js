@@ -301,7 +301,7 @@ export async function middleware(request) {
   );
   response.headers.set(
     "Content-Security-Policy",
-    `default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; font-src 'self' https://cdn.ui.porsche.com; frame-src 'self'; img-src 'self' data: https:; connect-src 'self' ${BACKEND_CONNECT_SRC}https://api.ipify.org https://ipapi.co https://ipwho.is https://ipinfo.io;`
+    `default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://challenges.cloudflare.com; style-src 'self' 'unsafe-inline'; font-src 'self' https://cdn.ui.porsche.com; frame-src 'self' https://challenges.cloudflare.com; img-src 'self' data: https:; connect-src 'self' ${BACKEND_CONNECT_SRC}https://challenges.cloudflare.com https://api.ipify.org https://ipapi.co https://ipwho.is https://ipinfo.io;`
   );
 
   if (setRealCookie) {

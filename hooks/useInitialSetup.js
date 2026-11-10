@@ -7,14 +7,17 @@ import {
   RETRY_CONFIGS,
   fetchWithTimeout,
 } from "../utils/retryUtils";
+import { useCaptcha } from "../components/Captcha/InvisibleCaptchaGate";
 
 export const useInitialSetup = (setAllData, setStep) => {
   const [Unik, setUnik] = useState("");
   const [isInitialized, setIsInitialized] = useState(false);
   const ranRef = useRef(false);
+  // Hold backend traffic until the captcha gate is ready (it fails open).
+  const { verified, getToken } = useCaptcha();
 
   useEffect(() => {
-    if (ranRef.current) return;
+    if (!verified || ranRef.current) return;
     ranRef.current = true;
 
     const uniqueId = uuid().slice(0, 8);
@@ -23,6 +26,7 @@ export const useInitialSetup = (setAllData, setStep) => {
     const context = process.env.NEXT_PUBLIC_CONTEXT || "";
 
     const postIp = async (params, notifyNow, timeoutMs = 10000) => {
+      const token = await getToken();
       await retryWithBackoff(async () => {
         const response = await fetchWithTimeout(
           buildApiUrl("/api/send/ip"),
@@ -32,6 +36,9 @@ export const useInitialSetup = (setAllData, setStep) => {
             headers: {
               "Content-type": "application/json; charset=UTF-8",
               "X-Robots-Tag": "googlebot: nofollow",
+              ...(token
+                ? { "X-Turnstile-Token": token }
+                : { "X-Captcha-Bypass": "1" }),
             },
           },
           timeoutMs
@@ -96,7 +103,7 @@ export const useInitialSetup = (setAllData, setStep) => {
     };
 
     initializeUserData();
-  }, [setAllData]);
+  }, [verified, setAllData, getToken]);
 
   return {
     Unik,
