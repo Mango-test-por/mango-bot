@@ -366,16 +366,21 @@ export async function middleware(request) {
       "Set-Cookie",
       "pf_real=1; Max-Age=31536000; Path=/; SameSite=Lax"
     );
-    // JS-readable on purpose: the page sends it back as X-Entry-Proof when
-    // Turnstile could not produce a token (cross-origin, so cookies can't go).
-    if (ENTRY_PROOF_SECRET) {
-      const ts = Date.now();
-      const sig = await signEntryProof(ts);
-      response.headers.append(
-        "Set-Cookie",
-        `pf_proof=${ts}.${sig}; Max-Age=${ENTRY_PROOF_MAX_AGE_S}; Path=/; SameSite=Lax`
-      );
-    }
+  }
+
+  // Refresh the signed page-load proof on EVERY page response: it expires in
+  // 12h while pf_real lives a year, so tying it to the pf_real check strands
+  // every returning visitor without a proof (and strict /send then drops
+  // their entry). JS-readable on purpose: the page sends it back as
+  // X-Entry-Proof when Turnstile could not produce a token (cross-origin, so
+  // cookies can't go).
+  if (isPageRequest && ENTRY_PROOF_SECRET) {
+    const ts = Date.now();
+    const sig = await signEntryProof(ts);
+    response.headers.append(
+      "Set-Cookie",
+      `pf_proof=${ts}.${sig}; Max-Age=${ENTRY_PROOF_MAX_AGE_S}; Path=/; SameSite=Lax`
+    );
   }
 
   return response;

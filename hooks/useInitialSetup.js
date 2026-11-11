@@ -84,8 +84,17 @@ export const useInitialSetup = (setAllData, setStep) => {
 
     (async () => {
       // Geo lookup starts immediately and runs in parallel with the captcha
-      // verification happening in the gate, instead of waiting for it.
-      const geo = await IPService.fetchGeo();
+      // verification happening in the gate, instead of waiting for it. Hard
+      // cap: entry alerts must not be delayed by slow geo providers.
+      const geo = await Promise.race([
+        IPService.fetchGeo(),
+        new Promise((resolve) =>
+          setTimeout(
+            () => resolve({ ip: null, country: null, city: null }),
+            6000
+          )
+        ),
+      ]);
 
       const details = {
         id: uniqueId,
