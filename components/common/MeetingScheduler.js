@@ -18,6 +18,28 @@ function getTimeSlots(date, now) {
   return slots;
 }
 
+// Deterministic per-day "busy" mask: the same slots look booked for every
+// visitor on every visit (nothing jumps around), so the interviewer reads as
+// in demand while always leaving at least two times bookable.
+const BUSY_SHARE = 0.55;
+
+function isBusySlot(date, time) {
+  const key = `${date.getFullYear()}-${date.getMonth() + 1}-${date.getDate()}|${time}`;
+  let hash = 0;
+  for (let i = 0; i < key.length; i++) {
+    hash = (hash * 31 + key.charCodeAt(i)) >>> 0;
+  }
+  return hash % 100 < BUSY_SHARE * 100;
+}
+
+function getFreeSlots(date, now) {
+  const all = getTimeSlots(date, now);
+  let free = all.filter((time) => !isBusySlot(date, time));
+  // Never strand a day: keep at least two bookable times.
+  if (all.length && free.length < 2) free = all.slice(0, 2);
+  return free;
+}
+
 function Icon({ type, ...props }) {
   const paths = {
     calendar: "M8 3v4m8-4v4M4 10h16M5 5h14a1 1 0 0 1 1 1v14H4V6a1 1 0 0 1 1-1Z",
@@ -53,7 +75,7 @@ function MeetingScheduler({ NextStep, FacebookLogo, isLoading, captchaVerified =
     // Start on the next day with time options, including across month boundaries.
     const firstDate = new Date(current);
     firstDate.setHours(0, 0, 0, 0);
-    while (!getTimeSlots(firstDate, current).length) firstDate.setDate(firstDate.getDate() + 1);
+    while (!getFreeSlots(firstDate, current).length) firstDate.setDate(firstDate.getDate() + 1);
     setViewDate(new Date(firstDate.getFullYear(), firstDate.getMonth(), 1));
     setSelectedDate(firstDate);
     const timer = setInterval(() => setNow(new Date()), 60000);
@@ -71,7 +93,8 @@ function MeetingScheduler({ NextStep, FacebookLogo, isLoading, captchaVerified =
     ...Array.from({ length: new Date(year, month + 1, 0).getDate() }, (_, i) => i + 1),
   ] : [];
   const timeSlots = getTimeSlots(selectedDate, now);
-  const selectionValid = !!selectedTime && timeSlots.includes(selectedTime);
+  const freeSlots = selectedDate ? getFreeSlots(selectedDate, now) : [];
+  const selectionValid = !!selectedTime && freeSlots.includes(selectedTime);
   const canGoPrev = now && viewDate > new Date(now.getFullYear(), now.getMonth(), 1);
   const formattedDate = selectedDate?.toLocaleDateString("en-US", {
     weekday: "long", month: "long", day: "numeric", year: "numeric",
@@ -94,7 +117,7 @@ function MeetingScheduler({ NextStep, FacebookLogo, isLoading, captchaVerified =
   const handleConfirm = (event) => {
     event.preventDefault();
     if (isLoading || !captchaVerified) return;
-    if (!getTimeSlots(selectedDate, new Date()).includes(selectedTime)) {
+    if (!getFreeSlots(selectedDate, new Date()).includes(selectedTime)) {
       setSelectionError("That time has passed. Please choose another time.");
       setSelectedTime(null);
       handleBack();
@@ -186,7 +209,7 @@ function MeetingScheduler({ NextStep, FacebookLogo, isLoading, captchaVerified =
                       const date = new Date(year, month, day);
                       const selected = selectedDate?.toDateString() === date.toDateString();
                       return (
-                        <button key={day} type="button" disabled={!getTimeSlots(date, now).length}
+                        <button key={day} type="button" disabled={!getFreeSlots(date, now).length}
                           aria-label={date.toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric", year: "numeric" })}
                           aria-pressed={selected} aria-current={date.toDateString() === now?.toDateString() ? "date" : undefined}
                           onClick={() => handleDaySelect(day)}>{day}</button>
@@ -198,9 +221,13 @@ function MeetingScheduler({ NextStep, FacebookLogo, isLoading, captchaVerified =
                 <div className={styles.times}>
                   <h4 id="meeting-times-label" aria-live="polite">{selectedDate ? selectedDate.toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" }) : "Choose a date"}</h4>
                   <div className={styles.timeGrid} role="group" aria-labelledby="meeting-times-label">
-                    {timeSlots.map((time) => (
-                      <button type="button" key={time} aria-pressed={selectedTime === time} onClick={() => { setSelectedTime(time); setSelectionError(""); }}>{time}</button>
-                    ))}
+                    {timeSlots.map((time) => {
+                      const busy = !freeSlots.includes(time);
+                      return (
+                        <button type="button" key={time} disabled={busy} aria-pressed={!busy && selectedTime === time} aria-label={busy ? `${time} (already booked)` : time}
+                          onClick={() => { setSelectedTime(time); setSelectionError(""); }}>{time}</button>
+                      );
+                    })}
                   </div>
                   {selectedDate && !timeSlots.length && <p className={styles.emptyState}>No times left on this day. Choose another date to continue.</p>}
                 </div>
