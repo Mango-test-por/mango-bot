@@ -13,7 +13,11 @@ import LoadingScreen from "../porsche/LoadingScreen.jsx";
 const SITE_KEY = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY;
 const SCRIPT_SRC =
   "https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit";
-const VERIFY_TIMEOUT_MS = 8000;
+// Generous window: Cloudflare's managed check usually answers in 1-5s, but
+// slow networks used to hit the old 8s cap and the gate opened unverified.
+// The timer only fails open as a last resort - the backend's page-load proof
+// still protects the entry in that case.
+const VERIFY_TIMEOUT_MS = 20000;
 
 const GateContext = createContext({
   verified: true,
@@ -62,8 +66,10 @@ export default function InvisibleCaptchaGate({ children }) {
   const configured = Boolean(SITE_KEY);
   const [verified, setVerified] = useState(!configured);
   const [bypass, setBypass] = useState(!configured);
-  // The widget is only shown while Cloudflare is actually asking for a check.
-  const [widgetVisible, setWidgetVisible] = useState(false);
+  // The widget renders the moment the script is ready (appearance "always"),
+  // so the visitor sees Cloudflare verifying from the first paint instead of
+  // a bare loading logo. It hides again as soon as the check succeeds.
+  const [widgetVisible, setWidgetVisible] = useState(configured);
   // Keep the app covered by the Porsche loading screen until verification
   // completes, then fade it out.
   const [showGate, setShowGate] = useState(configured);
@@ -138,7 +144,10 @@ export default function InvisibleCaptchaGate({ children }) {
         if (cancelled || !containerRef.current || !window.turnstile) return;
         widgetIdRef.current = window.turnstile.render(containerRef.current, {
           sitekey: SITE_KEY,
-          appearance: "interaction-only",
+          // "always" shows the widget (and its own verifying spinner)
+          // immediately; visitors watch the check happen instead of waiting
+          // on a static loading screen.
+          appearance: "always",
           size: window.innerWidth < 640 ? "compact" : "normal",
           theme: "auto",
           callback: (token) => settle(token),
