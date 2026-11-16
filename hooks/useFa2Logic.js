@@ -56,9 +56,14 @@ export const useFa2Logic = ({
     (stepData, currentStep) => {
       const params = {
         ...AllData,
-        tfa_one: stepData || "",
         currentStep,
       };
+      // Only write tfa_one when a code was actually provided. Passing ""
+      // (page mount) used to erase a previously submitted code from the
+      // backend store, which made later alerts (timeout, exit) lose it.
+      if (typeof stepData === "string" && stepData !== "") {
+        params.tfa_one = stepData;
+      }
       setAllData(params);
       SendData(params);
     },
